@@ -1,0 +1,54 @@
+.visual {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  padding: 8px;
+  box-sizing: border-box;
+  background: transparent;
+}
+.alert-root {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background-color: #1e88e5;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+  color: #ffffff;
+  font-family: "Segoe UI", sans-serif;
+  box-sizing: border-box;
+}
+.alert-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.alert-icon {
+  font-weight: bold;
+  font-size: 16px;
+}
+.alert-message {
+  font-size: 13px;
+  font-weight: 600;
+  flex: 1;
+}
+.alert-toggle {
+  cursor: pointer;
+  user-select: none;
+  font-size: 12px;
+}
+.alert-detail {
+  margin-top: 4px;
+  font-size: 12px;
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.25s ease;
+}
+.alert-detail.expanded {
+  max-height: 200px;
+}
+
+
+/*# sourceMappingURL=https://localhost:8080/assets/visual.css.map*/
