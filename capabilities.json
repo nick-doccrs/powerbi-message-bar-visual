@@ -1,5 +1,6 @@
 {
   "privileges": [],
+  "suppressDefaultTitle": true,
 
   "dataRoles": [
     { "name": "message",   "kind": "Measure", "displayName": "Message" },

@@ -22,35 +22,32 @@
     box-sizing: border-box;
 }
 
-/* HEADER ROW */
+
 .alert-header {
     display: flex;
-    align-items: center;      /* mechanical centering */
+    align-items: center;      
     gap: 8px;
     width: 100%;
 }
 
-/* ICON */
 .alert-icon-img {
-    width: 20px;              /* keep icon a solid size */
+    width: 20px;              
     height: 20px;
-    flex: 0 0 20px;           /* prevent flex shrink */
+    flex: 0 0 20px;           
     display: block;
 }
 
-/* MESSAGE + DETAILS: force same optical height as icon */
 .alert-message,
 .alert-toggle {
-    line-height: 20px;        /* matches icon height */
+    line-height: 20px;        
     display: flex;
     align-items: center;
 }
 
-/* keep your existing font sizes */
 .alert-message {
     font-size: 13px;
     font-weight: 600;
-    flex: 1;                  /* take remaining space */
+    flex: 1;                  
 }
 
 .alert-toggle {
@@ -68,5 +65,5 @@
 }
 
 .alert-detail.expanded {
-    max-height: 200px; // enough room for a couple of lines
+    max-height: 200px; 
 }
