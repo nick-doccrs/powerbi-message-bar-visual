@@ -30,19 +30,6 @@
   ],
 
   "objects": {
-    "visual": {
-      "displayName": "Visual",
-      "properties": {
-        "showTitle": {
-          "displayName": "Show title",
-          "type": { "bool": true }
-        },
-        "titleText": {
-          "displayName": "Title text",
-          "type": { "text": true }
-        }
-      }
-    },
     "trigger": {
       "displayName": "Trigger",
       "properties": {
@@ -84,8 +71,37 @@
       "properties": {
         "fontFamily": {
           "displayName": "Font family",
-          "type": { "text": true }
+          "type": {
+            "enumeration": [
+              { "displayName": "Arial",               "value": "Arial" },
+              { "displayName": "Arial Black",         "value": "Arial Black" },
+              { "displayName": "Arial Unicode MS",    "value": "Arial Unicode MS" },
+              { "displayName": "Calibri",             "value": "Calibri" },
+              { "displayName": "Cambria",             "value": "Cambria" },
+              { "displayName": "Cambria Math",        "value": "Cambria Math" },
+              { "displayName": "Candara",             "value": "Candara" },
+              { "displayName": "Comic Sans MS",       "value": "Comic Sans MS" },
+              { "displayName": "Consolas",            "value": "Consolas" },
+              { "displayName": "Constantia",          "value": "Constantia" },
+              { "displayName": "Corbel",              "value": "Corbel" },
+              { "displayName": "Courier New",         "value": "Courier New" },
+              { "displayName": "DIN",                 "value": "DIN" },
+              { "displayName": "Georgia",             "value": "Georgia" },
+              { "displayName": "Lucida Sans Unicode", "value": "Lucida Sans Unicode" },
+
+              { "displayName": "Segoe (Bold)",        "value": "Segoe UI" },
+              { "displayName": "Segoe UI",            "value": "Segoe UI" },
+              { "displayName": "Segoe UI Light",      "value": "Segoe UI Light" },
+
+              { "displayName": "Symbol",              "value": "Symbol" },
+              { "displayName": "Tahoma",              "value": "Tahoma" },
+              { "displayName": "Times New Roman",     "value": "Times New Roman" },
+              { "displayName": "Trebuchet MS",        "value": "Trebuchet MS" },
+              { "displayName": "Verdana",             "value": "Verdana" }
+            ]
+          }
         },
+
         "messageFontSize": {
           "displayName": "Message font size",
           "type": { "integer": true }
