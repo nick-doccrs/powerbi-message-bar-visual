@@ -39,7 +39,6 @@ export class Visual implements IVisual {
         const header = document.createElement("div");
         header.className = "alert-header";
 
-        // Use IMG for SVG icon
         const icon = document.createElement("img");
         icon.className = "alert-icon-img";
         icon.alt = "status icon";
@@ -74,20 +73,38 @@ export class Visual implements IVisual {
         this.detailElement = detail;
 
         // ----- Interaction -----
-        this.headerElement.onclick = () => {
+        // Toggle only on Details click
+        this.toggleElement.onclick = (e) => {
+            e.stopPropagation();
             this.expanded = !this.expanded;
             this.updateDetailExpandedState();
         };
 
-        // default styling
+        // Close popover when clicking elsewhere inside the visual
+        this.rootElement.addEventListener("click", (e) => {
+            const target = e.target as HTMLElement;
+
+            if (
+                this.expanded &&
+                !this.detailElement.contains(target) &&
+                !this.toggleElement.contains(target)
+            ) {
+                this.expanded = false;
+                this.updateDetailExpandedState();
+            }
+        });
+
         this.applySeverity(0);
+        this.updateDetailExpandedState();
     }
 
     private updateDetailExpandedState(): void {
         if (this.expanded) {
             this.detailElement.classList.add("expanded");
+            this.toggleElement.textContent = "Hide details";
         } else {
             this.detailElement.classList.remove("expanded");
+            this.toggleElement.textContent = "Details";
         }
     }
 
@@ -95,21 +112,15 @@ export class Visual implements IVisual {
         const objects = dataView?.metadata?.objects;
         const triggerObj: any = (objects as any)?.trigger ?? {};
 
-        const useCompareField = triggerObj.useCompareField ?? false;
-        const hardcodedCompareValue = triggerObj.hardcodedCompareValue ?? "";
-        const severityOnMatch = Number(triggerObj.severityOnMatch ?? 0);
-        const severityOnNoMatch = Number(triggerObj.severityOnNoMatch ?? 0);
-
         return {
-            useCompareField,
-            hardcodedCompareValue,
-            severityOnMatch,
-            severityOnNoMatch
+            useCompareField: triggerObj.useCompareField ?? false,
+            hardcodedCompareValue: triggerObj.hardcodedCompareValue ?? "",
+            severityOnMatch: Number(triggerObj.severityOnMatch ?? 0),
+            severityOnNoMatch: Number(triggerObj.severityOnNoMatch ?? 0)
         };
     }
 
     private applySeverity(sev: number): void {
-        // 0=Info, 1=Success, 2=Caution, 3=Critical
         const styles = [
             { fill: "#F5F5F5", border: "#D1D1D1", icon: InfoIcon },     // Info
             { fill: "#F1FAF1", border: "#A2D8A2", icon: SuccessIcon },  // Success
@@ -124,7 +135,6 @@ export class Visual implements IVisual {
         this.alertRootElement.style.border = `1px solid ${s.border}`;
         this.alertRootElement.style.borderRadius = "4px";
         this.alertRootElement.style.color = "#111111";
-
         this.iconElement.src = s.icon;
     }
 
@@ -135,13 +145,15 @@ export class Visual implements IVisual {
         if (!table || !table.columns || !table.rows || table.rows.length === 0) {
             this.messageElement.textContent = "Message (bind a measure)";
             this.detailElement.textContent = "";
+            this.toggleElement.style.display = "none";
+            this.expanded = false;
             this.applySeverity(0);
+            this.updateDetailExpandedState();
             return;
         }
 
         const row = table.rows[0];
 
-        // Find column index by role name (robust to reordering)
         const getIndexByRole = (roleName: string): number => {
             for (let i = 0; i < table.columns.length; i++) {
                 const roles = (table.columns[i] as any).roles;
@@ -170,13 +182,19 @@ export class Visual implements IVisual {
             detailText = String(row[idxDetail]);
         }
 
-        // If severity role is bound, use it directly
+        // Hide toggle if no detail text
+        if (!detailText || detailText.trim() === "") {
+            this.toggleElement.style.display = "none";
+            this.expanded = false;
+        } else {
+            this.toggleElement.style.display = "flex";
+        }
+
         if (idxSeverity >= 0 && row[idxSeverity] != null && row[idxSeverity] !== "") {
             const sevNum = Number(row[idxSeverity]);
             if (!Number.isNaN(sevNum)) severityValue = sevNum;
         }
 
-        // Otherwise, use compare logic if value role is bound
         if (idxValue >= 0) triggerValue = row[idxValue];
         if (idxCompareTo >= 0) compareToValue = row[idxCompareTo];
 
