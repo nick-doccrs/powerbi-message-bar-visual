@@ -1,77 +1,203 @@
-/*
-*  Power BI Visual CLI
-*
-*  Copyright (c) Microsoft Corporation
-*  All rights reserved.
-*  MIT License
-*
-*  Permission is hereby granted, free of charge, to any person obtaining a copy
-*  of this software and associated documentation files (the ""Software""), to deal
-*  in the Software without restriction, including without limitation the rights
-*  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-*  copies of the Software, and to permit persons to whom the Software is
-*  furnished to do so, subject to the following conditions:
-*
-*  The above copyright notice and this permission notice shall be included in
-*  all copies or substantial portions of the Software.
-*
-*  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-*  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-*  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-*  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-*  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-*  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-*  THE SOFTWARE.
-*/
 "use strict";
 
-import powerbi from "powerbi-visuals-api";
-import { FormattingSettingsService } from "powerbi-visuals-utils-formattingmodel";
 import "./../style/visual.less";
 
+import powerbi from "powerbi-visuals-api";
+import IVisual = powerbi.extensibility.visual.IVisual;
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
 import VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions;
-import IVisual = powerbi.extensibility.visual.IVisual;
+import DataView = powerbi.DataView;
 
-import { VisualFormattingSettingsModel } from "./settings";
+import ErrorIcon from "./assets/Error.svg";
+import InfoIcon from "./assets/Info.svg";
+import SuccessIcon from "./assets/Success.svg";
+import WarningIcon from "./assets/Warning.svg";
 
 export class Visual implements IVisual {
-    private target: HTMLElement;
-    private updateCount: number;
-    private textNode: Text;
-    private formattingSettings: VisualFormattingSettingsModel;
-    private formattingSettingsService: FormattingSettingsService;
+
+    private rootElement: HTMLElement;
+
+    private alertRootElement: HTMLElement;
+    private headerElement: HTMLElement;
+    private iconElement: HTMLImageElement;
+    private messageElement: HTMLElement;
+    private toggleElement: HTMLElement;
+    private detailElement: HTMLElement;
+
+    private expanded: boolean = false;
 
     constructor(options: VisualConstructorOptions) {
-        console.log('Visual constructor', options);
-        this.formattingSettingsService = new FormattingSettingsService();
-        this.target = options.element;
-        this.updateCount = 0;
-        if (document) {
-            const new_p: HTMLElement = document.createElement("p");
-            new_p.appendChild(document.createTextNode("Update count:"));
-            const new_em: HTMLElement = document.createElement("em");
-            this.textNode = document.createTextNode(this.updateCount.toString());
-            new_em.appendChild(this.textNode);
-            new_p.appendChild(new_em);
-            this.target.appendChild(new_p);
+        this.rootElement = options.element;
+
+        // ----- Build DOM -----
+        const container = document.createElement("div");
+        container.className = "visual";
+
+        const alertRoot = document.createElement("div");
+        alertRoot.className = "alert-root";
+
+        const header = document.createElement("div");
+        header.className = "alert-header";
+
+        // Use IMG for SVG icon
+        const icon = document.createElement("img");
+        icon.className = "alert-icon-img";
+        icon.alt = "status icon";
+
+        const message = document.createElement("div");
+        message.className = "alert-message";
+        message.textContent = "Message (bind a measure)";
+
+        const toggle = document.createElement("div");
+        toggle.className = "alert-toggle";
+        toggle.textContent = "Details";
+
+        header.appendChild(icon);
+        header.appendChild(message);
+        header.appendChild(toggle);
+
+        const detail = document.createElement("div");
+        detail.className = "alert-detail";
+        detail.textContent = "";
+
+        alertRoot.appendChild(header);
+        alertRoot.appendChild(detail);
+        container.appendChild(alertRoot);
+        this.rootElement.appendChild(container);
+
+        // ----- Store refs -----
+        this.alertRootElement = alertRoot;
+        this.headerElement = header;
+        this.iconElement = icon;
+        this.messageElement = message;
+        this.toggleElement = toggle;
+        this.detailElement = detail;
+
+        // ----- Interaction -----
+        this.headerElement.onclick = () => {
+            this.expanded = !this.expanded;
+            this.updateDetailExpandedState();
+        };
+
+        // default styling
+        this.applySeverity(0);
+    }
+
+    private updateDetailExpandedState(): void {
+        if (this.expanded) {
+            this.detailElement.classList.add("expanded");
+        } else {
+            this.detailElement.classList.remove("expanded");
         }
     }
 
-    public update(options: VisualUpdateOptions) {
-        this.formattingSettings = this.formattingSettingsService.populateFormattingSettingsModel(VisualFormattingSettingsModel, options.dataViews[0]);
+    private getTriggerSettings(dataView: DataView | undefined) {
+        const objects = dataView?.metadata?.objects;
+        const triggerObj: any = (objects as any)?.trigger ?? {};
 
-        console.log('Visual update', options);
-        if (this.textNode) {
-            this.textNode.textContent = (this.updateCount++).toString();
-        }
+        const useCompareField = triggerObj.useCompareField ?? false;
+        const hardcodedCompareValue = triggerObj.hardcodedCompareValue ?? "";
+        const severityOnMatch = Number(triggerObj.severityOnMatch ?? 0);
+        const severityOnNoMatch = Number(triggerObj.severityOnNoMatch ?? 0);
+
+        return {
+            useCompareField,
+            hardcodedCompareValue,
+            severityOnMatch,
+            severityOnNoMatch
+        };
     }
 
-    /**
-     * Returns properties pane formatting model content hierarchies, properties and latest formatting values, Then populate properties pane.
-     * This method is called once every time we open properties pane or when the user edit any format property. 
-     */
-    public getFormattingModel(): powerbi.visuals.FormattingModel {
-        return this.formattingSettingsService.buildFormattingModel(this.formattingSettings);
+    private applySeverity(sev: number): void {
+        // 0=Info, 1=Success, 2=Caution, 3=Critical
+        const styles = [
+            { fill: "#F5F5F5", border: "#D1D1D1", icon: InfoIcon },     // Info
+            { fill: "#F1FAF1", border: "#A2D8A2", icon: SuccessIcon },  // Success
+            { fill: "#FFF9F5", border: "#FBCEB6", icon: WarningIcon },  // Caution
+            { fill: "#FDF3F4", border: "#ECABB3", icon: ErrorIcon }     // Critical
+        ];
+
+        const idx = Math.max(0, Math.min(3, sev));
+        const s = styles[idx];
+
+        this.alertRootElement.style.backgroundColor = s.fill;
+        this.alertRootElement.style.border = `1px solid ${s.border}`;
+        this.alertRootElement.style.borderRadius = "4px";
+        this.alertRootElement.style.color = "#111111";
+
+        this.iconElement.src = s.icon;
+    }
+
+    public update(options: VisualUpdateOptions): void {
+        const dataView = options.dataViews && options.dataViews[0];
+        const table = dataView?.table;
+
+        if (!table || !table.columns || !table.rows || table.rows.length === 0) {
+            this.messageElement.textContent = "Message (bind a measure)";
+            this.detailElement.textContent = "";
+            this.applySeverity(0);
+            return;
+        }
+
+        const row = table.rows[0];
+
+        // Find column index by role name (robust to reordering)
+        const getIndexByRole = (roleName: string): number => {
+            for (let i = 0; i < table.columns.length; i++) {
+                const roles = (table.columns[i] as any).roles;
+                if (roles && roles[roleName]) return i;
+            }
+            return -1;
+        };
+
+        const idxMessage   = getIndexByRole("message");
+        const idxDetail    = getIndexByRole("detail");
+        const idxSeverity  = getIndexByRole("severity");
+        const idxValue     = getIndexByRole("value");
+        const idxCompareTo = getIndexByRole("compareTo");
+
+        let messageText = "Message (bind a measure)";
+        let detailText = "";
+        let severityValue: number | null = null;
+
+        let triggerValue: any = null;
+        let compareToValue: any = null;
+
+        if (idxMessage >= 0 && row[idxMessage] != null) {
+            messageText = String(row[idxMessage]);
+        }
+        if (idxDetail >= 0 && row[idxDetail] != null) {
+            detailText = String(row[idxDetail]);
+        }
+
+        // If severity role is bound, use it directly
+        if (idxSeverity >= 0 && row[idxSeverity] != null && row[idxSeverity] !== "") {
+            const sevNum = Number(row[idxSeverity]);
+            if (!Number.isNaN(sevNum)) severityValue = sevNum;
+        }
+
+        // Otherwise, use compare logic if value role is bound
+        if (idxValue >= 0) triggerValue = row[idxValue];
+        if (idxCompareTo >= 0) compareToValue = row[idxCompareTo];
+
+        if (severityValue == null && triggerValue != null) {
+            const settings = this.getTriggerSettings(dataView);
+
+            let compareTarget: any = settings.hardcodedCompareValue;
+            if (settings.useCompareField && compareToValue != null) {
+                compareTarget = compareToValue;
+            }
+
+            const isMatch = String(triggerValue) === String(compareTarget);
+            severityValue = isMatch ? settings.severityOnMatch : settings.severityOnNoMatch;
+        }
+
+        if (severityValue == null) severityValue = 0;
+
+        this.messageElement.textContent = messageText;
+        this.detailElement.textContent = detailText;
+
+        this.applySeverity(severityValue);
+        this.updateDetailExpandedState();
     }
 }

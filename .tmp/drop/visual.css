@@ -16,28 +16,46 @@
   border-radius: 6px;
   background-color: #1e88e5;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
-  color: #ffffff;
+  color: #111111;
   font-family: "Segoe UI", sans-serif;
   box-sizing: border-box;
 }
+/* HEADER ROW */
 .alert-header {
   display: flex;
   align-items: center;
+  /* mechanical centering */
   gap: 8px;
+  width: 100%;
 }
-.alert-icon {
-  font-weight: bold;
-  font-size: 16px;
+/* ICON */
+.alert-icon-img {
+  width: 20px;
+  /* keep icon a solid size */
+  height: 20px;
+  flex: 0 0 20px;
+  /* prevent flex shrink */
+  display: block;
 }
+/* MESSAGE + DETAILS: force same optical height as icon */
+.alert-message,
+.alert-toggle {
+  line-height: 20px;
+  /* matches icon height */
+  display: flex;
+  align-items: center;
+}
+/* keep your existing font sizes */
 .alert-message {
   font-size: 13px;
   font-weight: 600;
   flex: 1;
+  /* take remaining space */
 }
 .alert-toggle {
-  cursor: pointer;
-  user-select: none;
   font-size: 12px;
+  cursor: pointer;
+  flex: 0 0 auto;
 }
 .alert-detail {
   margin-top: 4px;
