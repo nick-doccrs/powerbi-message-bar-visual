@@ -2,12 +2,11 @@
   width: 100%;
   height: 100%;
   display: flex;
-  /* keep the main bar at content height, not stretched */
+  /* keep bar height fixed */
   align-items: flex-start;
   justify-content: center;
   padding: 8px;
   box-sizing: border-box;
-  /* allow floating popover outside box */
   background: transparent !important;
   overflow: visible !important;
   position: relative;
@@ -18,18 +17,17 @@
   flex-direction: column;
   width: 100%;
   padding: 8px 12px;
-  /* base radius; TS will override to 4px per severity */
+  /* This defines the bar's content width */
   border-radius: 6px;
+  /* overridden by severity to 4px */
   background-color: #1e88e5;
   /* overridden by severity */
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
   color: #111111;
   font-family: "Segoe UI", sans-serif;
   box-sizing: border-box;
-  /* needed so popover can escape */
   position: relative;
   overflow: visible !important;
-  /* belt-and-braces against stretch */
   align-self: flex-start;
   height: auto;
 }
@@ -47,7 +45,7 @@
   flex: 0 0 20px;
   display: block;
 }
-/* Header text elements */
+/* Text elements */
 .alert-message,
 .alert-toggle {
   line-height: 20px;
@@ -64,42 +62,36 @@
   cursor: pointer;
   flex: 0 0 auto;
 }
-/* -------------------------------------------
-   POPOVER DETAILS PANEL
-   Matches main bar styling (colors, border,
-   radius, shadow, text)
-   ------------------------------------------- */
+/* ---------------------------------------------------------
+   POPOVER DETAILS – EXACT same width as content area
+   --------------------------------------------------------- */
 .alert-detail {
   position: absolute;
   top: calc(100% + 6px);
+  /* Popover aligns to bar edges exactly */
   left: 0;
   right: 0;
-  z-index: 9999;
-  /* match outer bar width exactly */
-  padding: 0;
-  /* recreate inner layout */
-  box-sizing: border-box;
-  border-radius: inherit;
+  /* Match padding of main bar */
+  padding: 8px 12px;
+  /* Inherit all bar styling */
   background: inherit;
   border: inherit;
   color: inherit;
+  border-radius: inherit;
   box-shadow: inherit;
-  /* inner content padding matches main bar */
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 8px 12px;
-  /* re-added correctly */
+  box-sizing: border-box;
+  /* Collapsed state */
   max-height: 0;
   opacity: 0;
+  overflow-y: hidden;
   pointer-events: none;
-  overflow-y: auto;
   transition: opacity 0.2s ease, max-height 0.2s ease;
 }
 /* Expanded popover */
 .alert-detail.expanded {
   max-height: 240px;
   opacity: 1;
+  overflow-y: auto;
   pointer-events: auto;
 }
 

@@ -3,6 +3,7 @@ import powerbi from "powerbi-visuals-api";
 import IVisual = powerbi.extensibility.visual.IVisual;
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
 import VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions;
+import FormattingModel = powerbi.visuals.FormattingModel;
 export declare class Visual implements IVisual {
     private rootElement;
     private alertRootElement;
@@ -12,9 +13,12 @@ export declare class Visual implements IVisual {
     private toggleElement;
     private detailElement;
     private expanded;
+    private formattingSettingsService;
+    private formattingSettingsModel;
     constructor(options: VisualConstructorOptions);
     private updateDetailExpandedState;
-    private getTriggerSettings;
+    private applyTextSettings;
     private applySeverity;
     update(options: VisualUpdateOptions): void;
+    getFormattingModel(): FormattingModel;
 }

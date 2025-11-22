@@ -1,26 +1,35 @@
 import { formattingSettings } from "powerbi-visuals-utils-formattingmodel";
-import FormattingSettingsCard = formattingSettings.SimpleCard;
-import FormattingSettingsSlice = formattingSettings.Slice;
-import FormattingSettingsModel = formattingSettings.Model;
 /**
- * Data Point Formatting Card
+ * Trigger card (matches objects.trigger in capabilities.json)
  */
-declare class DataPointCardSettings extends FormattingSettingsCard {
-    defaultColor: formattingSettings.ColorPicker;
-    showAllDataPoints: formattingSettings.ToggleSwitch;
-    fill: formattingSettings.ColorPicker;
-    fillRule: formattingSettings.ColorPicker;
-    fontSize: formattingSettings.NumUpDown;
+export declare class TriggerSettingsCard extends formattingSettings.SimpleCard {
     name: string;
     displayName: string;
-    slices: Array<FormattingSettingsSlice>;
+    useCompareField: formattingSettings.ToggleSwitch;
+    hardcodedCompareValue: formattingSettings.TextInput;
+    private sevItems;
+    severityOnMatch: formattingSettings.ItemDropdown;
+    severityOnNoMatch: formattingSettings.ItemDropdown;
+    slices: (formattingSettings.TextInput | formattingSettings.ToggleSwitch | formattingSettings.ItemDropdown)[];
 }
 /**
-* visual settings model class
-*
-*/
-export declare class VisualFormattingSettingsModel extends FormattingSettingsModel {
-    dataPointCard: DataPointCardSettings;
-    cards: DataPointCardSettings[];
+ * Text card (matches objects.text in capabilities.json)
+ */
+export declare class TextSettingsCard extends formattingSettings.SimpleCard {
+    name: string;
+    displayName: string;
+    fontFamily: formattingSettings.TextInput;
+    messageFontSize: formattingSettings.NumUpDown;
+    detailFontSize: formattingSettings.NumUpDown;
+    toggleFontSize: formattingSettings.NumUpDown;
+    messageBold: formattingSettings.ToggleSwitch;
+    slices: (formattingSettings.TextInput | formattingSettings.NumUpDown | formattingSettings.ToggleSwitch)[];
 }
-export {};
+/**
+ * Root formatting model (controls what appears in the pane)
+ */
+export declare class VisualFormattingSettingsModel extends formattingSettings.Model {
+    trigger: TriggerSettingsCard;
+    text: TextSettingsCard;
+    cards: (TextSettingsCard | TriggerSettingsCard)[];
+}
