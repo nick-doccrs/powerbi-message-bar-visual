@@ -29,41 +29,80 @@
     }
   ],
 
-"objects": {
-  "trigger": {
-    "displayName": "Trigger",
-    "properties": {
-      "useCompareField": {
-        "displayName": "Use Compare Field",
-        "type": { "bool": true }
-      },
-      "hardcodedCompareValue": {
-        "displayName": "Hardcoded Compare Value",
-        "type": { "text": true }
-      },
-      "severityOnMatch": {
-        "displayName": "Severity on Match",
-        "type": {
-          "enumeration": [
-            { "displayName": "Info",     "value": "0" },
-            { "displayName": "Success",  "value": "1" },
-            { "displayName": "Caution",  "value": "2" },
-            { "displayName": "Critical", "value": "3" }
-          ]
+  "objects": {
+    "visual": {
+      "displayName": "Visual",
+      "properties": {
+        "showTitle": {
+          "displayName": "Show title",
+          "type": { "bool": true }
+        },
+        "titleText": {
+          "displayName": "Title text",
+          "type": { "text": true }
         }
-      },
-      "severityOnNoMatch": {
-        "displayName": "Severity on No Match",
-        "type": {
-          "enumeration": [
-            { "displayName": "Info",     "value": "0" },
-            { "displayName": "Success",  "value": "1" },
-            { "displayName": "Caution",  "value": "2" },
-            { "displayName": "Critical", "value": "3" }
-          ]
+      }
+    },
+    "trigger": {
+      "displayName": "Trigger",
+      "properties": {
+        "useCompareField": {
+          "displayName": "Use Compare Field",
+          "type": { "bool": true }
+        },
+        "hardcodedCompareValue": {
+          "displayName": "Hardcoded Compare Value",
+          "type": { "text": true }
+        },
+        "severityOnMatch": {
+          "displayName": "Severity on Match",
+          "type": {
+            "enumeration": [
+              { "displayName": "Info",     "value": "0" },
+              { "displayName": "Success",  "value": "1" },
+              { "displayName": "Caution",  "value": "2" },
+              { "displayName": "Critical", "value": "3" }
+            ]
+          }
+        },
+        "severityOnNoMatch": {
+          "displayName": "Severity on No Match",
+          "type": {
+            "enumeration": [
+              { "displayName": "Info",     "value": "0" },
+              { "displayName": "Success",  "value": "1" },
+              { "displayName": "Caution",  "value": "2" },
+              { "displayName": "Critical", "value": "3" }
+            ]
+          }
+        }
+      }
+    },
+
+    "text": {
+      "displayName": "Text",
+      "properties": {
+        "fontFamily": {
+          "displayName": "Font family",
+          "type": { "text": true }
+        },
+        "messageFontSize": {
+          "displayName": "Message font size",
+          "type": { "integer": true }
+        },
+        "detailFontSize": {
+          "displayName": "Detail font size",
+          "type": { "integer": true }
+        },
+        "toggleFontSize": {
+          "displayName": "Details font size",
+          "type": { "integer": true }
+        },
+        "messageBold": {
+          "displayName": "Bold message",
+          "type": { "bool": true }
         }
       }
     }
   }
-}
 }
