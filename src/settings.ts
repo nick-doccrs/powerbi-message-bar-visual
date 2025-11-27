@@ -1,142 +1,78 @@
-"use strict";
-
 import powerbi from "powerbi-visuals-api";
-import { formattingSettings } from "powerbi-visuals-utils-formattingmodel";
+import {
+  FormattingSettingsService,
+  formattingSettings
+} from "powerbi-visuals-utils-formattingmodel";
 
-/**
- * Trigger card (objects.trigger)
- */
-export class TriggerSettingsCard extends formattingSettings.SimpleCard {
-    name: string = "trigger";
-    displayName: string = "Trigger";
+export class RulesCard extends formattingSettings.SimpleCard {
+  name = "rules";
+  displayName = "Rules";
 
-    useCompareField = new formattingSettings.ToggleSwitch({
-        name: "useCompareField",
-        displayName: "Use Compare Field",
-        value: false
-    });
+  enabled = new formattingSettings.ToggleSwitch({
+    name: "enabled",
+    displayName: "Enable rules",
+    value: true
+  });
 
-    hardcodedCompareValue = new formattingSettings.TextInput({
-        name: "hardcodedCompareValue",
-        displayName: "Hardcoded Compare Value",
-        value: "",
-        placeholder: ""
-    });
+  operator = new formattingSettings.AutoDropdown({
+    name: "operator",
+    displayName: "Operator",
+    value: "eq" // matches capabilities enumeration values
+  });
 
-    private sevItems: powerbi.IEnumMember[] = [
-        { value: "0", displayName: "Info" },
-        { value: "1", displayName: "Success" },
-        { value: "2", displayName: "Caution" },
-        { value: "3", displayName: "Critical" }
-    ];
+  compareSource = new formattingSettings.AutoDropdown({
+    name: "compareSource",
+    displayName: "Compare source",
+    value: "field" // "field" | "fixed"
+  });
 
-    severityOnMatch = new formattingSettings.ItemDropdown({
-        name: "severityOnMatch",
-        displayName: "Severity on Match",
-        items: this.sevItems,
-        value: this.sevItems[0]
-    });
+  fixedValue = new formattingSettings.NumUpDown({
+    name: "fixedValue",
+    displayName: "Fixed value",
+    value: 0
+  });
 
-    severityOnNoMatch = new formattingSettings.ItemDropdown({
-        name: "severityOnNoMatch",
-        displayName: "Severity on No Match",
-        items: this.sevItems,
-        value: this.sevItems[0]
-    });
+  trueState = new formattingSettings.AutoDropdown({
+    name: "trueState",
+    displayName: "Severity when TRUE",
+    value: "1" // Success by default
+  });
 
-    slices = [
-        this.useCompareField,
-        this.hardcodedCompareValue,
-        this.severityOnMatch,
-        this.severityOnNoMatch
-    ];
+  falseState = new formattingSettings.AutoDropdown({
+    name: "falseState",
+    displayName: "Severity when FALSE",
+    value: "2" // Caution by default
+  });
+
+  slices = [
+    this.enabled,
+    this.operator,
+    this.compareSource,
+    this.fixedValue,
+    this.trueState,
+    this.falseState
+  ];
 }
 
-/**
- * Text card (objects.text)
- */
-export class TextSettingsCard extends formattingSettings.SimpleCard {
-    name: string = "text";
-    displayName: string = "Text";
+export class VisualSettings extends formattingSettings.Model {
+  rules = new RulesCard();
 
-    private fontItems: powerbi.IEnumMember[] = [
-        { value: "Arial",               displayName: "Arial" },
-        { value: "Arial Black",         displayName: "Arial Black" },
-        { value: "Arial Unicode MS",    displayName: "Arial Unicode MS" },
-        { value: "Calibri",             displayName: "Calibri" },
-        { value: "Cambria",             displayName: "Cambria" },
-        { value: "Cambria Math",        displayName: "Cambria Math" },
-        { value: "Candara",             displayName: "Candara" },
-        { value: "Comic Sans MS",       displayName: "Comic Sans MS" },
-        { value: "Consolas",            displayName: "Consolas" },
-        { value: "Constantia",          displayName: "Constantia" },
-        { value: "Corbel",              displayName: "Corbel" },
-        { value: "Courier New",         displayName: "Courier New" },
-        { value: "DIN",                 displayName: "DIN" },
-        { value: "Georgia",             displayName: "Georgia" },
-        { value: "Lucida Sans Unicode", displayName: "Lucida Sans Unicode" },
-
-        // Label shown, but value maps to Segoe UI (so it still works)
-        { value: "Segoe UI",            displayName: "Segoe (Bold)" },
-        { value: "Segoe UI",            displayName: "Segoe UI" },
-        { value: "Segoe UI Light",      displayName: "Segoe UI Light" },
-
-        { value: "Symbol",              displayName: "Symbol" },
-        { value: "Tahoma",              displayName: "Tahoma" },
-        { value: "Times New Roman",     displayName: "Times New Roman" },
-        { value: "Trebuchet MS",        displayName: "Trebuchet MS" },
-        { value: "Verdana",             displayName: "Verdana" }
-    ];
-
-    fontFamily = new formattingSettings.ItemDropdown({
-        name: "fontFamily",
-        displayName: "Font family",
-        items: this.fontItems,
-        value: this.fontItems[15] // default to Segoe UI (first Segoe entry)
-    });
-
-    messageFontSize = new formattingSettings.NumUpDown({
-        name: "messageFontSize",
-        displayName: "Message font size",
-        value: 13
-    });
-
-    detailFontSize = new formattingSettings.NumUpDown({
-        name: "detailFontSize",
-        displayName: "Detail font size",
-        value: 12
-    });
-
-    toggleFontSize = new formattingSettings.NumUpDown({
-        name: "toggleFontSize",
-        displayName: "Details font size",
-        value: 12
-    });
-
-    messageBold = new formattingSettings.ToggleSwitch({
-        name: "messageBold",
-        displayName: "Bold message",
-        value: true
-    });
-
-    slices = [
-        this.fontFamily,
-        this.messageFontSize,
-        this.detailFontSize,
-        this.toggleFontSize,
-        this.messageBold
-    ];
+  cards = [this.rules];
 }
 
-/**
- * Root formatting model
- */
-export class VisualFormattingSettingsModel extends formattingSettings.Model {
-    trigger = new TriggerSettingsCard();
-    text = new TextSettingsCard();
+export class VisualSettingsService {
+  private svc = new FormattingSettingsService();
+  public settings = new VisualSettings();
 
-    cards = [
-        this.trigger,
-        this.text
-    ];
+  populate(dataView: powerbi.DataView): VisualSettings {
+    this.settings = this.svc.populateFormattingSettingsModel(
+      VisualSettings,
+      dataView
+    );
+    return this.settings;
+  }
+
+  build() {
+    return this.svc.buildFormattingModel(this.settings);
+  }
 }

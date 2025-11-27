@@ -13,8 +13,8 @@ export declare class Visual implements IVisual {
     private toggleElement;
     private detailElement;
     private expanded;
-    private formattingSettingsService;
-    private formattingSettingsModel;
+    private settingsService;
+    private settings;
     constructor(options: VisualConstructorOptions);
     private updateDetailExpandedState;
     private applyTextSettings;
