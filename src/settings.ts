@@ -4,7 +4,7 @@ import powerbi from "powerbi-visuals-api";
 import { formattingSettings } from "powerbi-visuals-utils-formattingmodel";
 
 /**
- * Trigger card (matches objects.trigger in capabilities.json)
+ * Trigger card (objects.trigger)
  */
 export class TriggerSettingsCard extends formattingSettings.SimpleCard {
     name: string = "trigger";
@@ -20,10 +20,9 @@ export class TriggerSettingsCard extends formattingSettings.SimpleCard {
         name: "hardcodedCompareValue",
         displayName: "Hardcoded Compare Value",
         value: "",
-        placeholder: "" // required by your formattingmodel version
+        placeholder: ""
     });
 
-    // ItemDropdown items must be IEnumMember[]
     private sevItems: powerbi.IEnumMember[] = [
         { value: "0", displayName: "Info" },
         { value: "1", displayName: "Success" },
@@ -35,14 +34,14 @@ export class TriggerSettingsCard extends formattingSettings.SimpleCard {
         name: "severityOnMatch",
         displayName: "Severity on Match",
         items: this.sevItems,
-        value: this.sevItems[0] // default Info
+        value: this.sevItems[0]
     });
 
     severityOnNoMatch = new formattingSettings.ItemDropdown({
         name: "severityOnNoMatch",
         displayName: "Severity on No Match",
         items: this.sevItems,
-        value: this.sevItems[0] // default Info
+        value: this.sevItems[0]
     });
 
     slices = [
@@ -54,21 +53,48 @@ export class TriggerSettingsCard extends formattingSettings.SimpleCard {
 }
 
 /**
- * Text card (matches objects.text in capabilities.json)
+ * Text card (objects.text)
  */
 export class TextSettingsCard extends formattingSettings.SimpleCard {
     name: string = "text";
     displayName: string = "Text";
 
-    fontFamily = new formattingSettings.TextInput({
+    private fontItems: powerbi.IEnumMember[] = [
+        { value: "Arial",               displayName: "Arial" },
+        { value: "Arial Black",         displayName: "Arial Black" },
+        { value: "Arial Unicode MS",    displayName: "Arial Unicode MS" },
+        { value: "Calibri",             displayName: "Calibri" },
+        { value: "Cambria",             displayName: "Cambria" },
+        { value: "Cambria Math",        displayName: "Cambria Math" },
+        { value: "Candara",             displayName: "Candara" },
+        { value: "Comic Sans MS",       displayName: "Comic Sans MS" },
+        { value: "Consolas",            displayName: "Consolas" },
+        { value: "Constantia",          displayName: "Constantia" },
+        { value: "Corbel",              displayName: "Corbel" },
+        { value: "Courier New",         displayName: "Courier New" },
+        { value: "DIN",                 displayName: "DIN" },
+        { value: "Georgia",             displayName: "Georgia" },
+        { value: "Lucida Sans Unicode", displayName: "Lucida Sans Unicode" },
+
+        // Label shown, but value maps to Segoe UI (so it still works)
+        { value: "Segoe UI",            displayName: "Segoe (Bold)" },
+        { value: "Segoe UI",            displayName: "Segoe UI" },
+        { value: "Segoe UI Light",      displayName: "Segoe UI Light" },
+
+        { value: "Symbol",              displayName: "Symbol" },
+        { value: "Tahoma",              displayName: "Tahoma" },
+        { value: "Times New Roman",     displayName: "Times New Roman" },
+        { value: "Trebuchet MS",        displayName: "Trebuchet MS" },
+        { value: "Verdana",             displayName: "Verdana" }
+    ];
+
+    fontFamily = new formattingSettings.ItemDropdown({
         name: "fontFamily",
         displayName: "Font family",
-        value: "Segoe UI",
-        placeholder: ""
+        items: this.fontItems,
+        value: this.fontItems[15] // default to Segoe UI (first Segoe entry)
     });
 
-    // IMPORTANT: Your library version does not support numeric min/max options,
-    // so we omit options to avoid type errors.
     messageFontSize = new formattingSettings.NumUpDown({
         name: "messageFontSize",
         displayName: "Message font size",
@@ -103,7 +129,7 @@ export class TextSettingsCard extends formattingSettings.SimpleCard {
 }
 
 /**
- * Root formatting model (controls what appears in the pane)
+ * Root formatting model
  */
 export class VisualFormattingSettingsModel extends formattingSettings.Model {
     trigger = new TriggerSettingsCard();

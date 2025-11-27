@@ -106,7 +106,7 @@ export class Visual implements IVisual {
     private applyTextSettings(): void {
         const text = this.formattingSettingsModel.text;
 
-        const family = text.fontFamily.value || "Segoe UI";
+        const family = String(text.fontFamily.value?.value ?? "Segoe UI");
         const msgSize = Number(text.messageFontSize.value) || 13;
         const detSize = Number(text.detailFontSize.value) || 12;
         const togSize = Number(text.toggleFontSize.value) || 12;
@@ -118,6 +118,7 @@ export class Visual implements IVisual {
         this.toggleElement.style.fontSize = `${togSize}px`;
         this.messageElement.style.fontWeight = bold ? "600" : "400";
     }
+
 
     private applySeverity(sev: number): void {
         // 0=Info, 1=Success, 2=Caution, 3=Critical
