@@ -202,29 +202,43 @@ export class Visual implements IVisual {
         //--------------------------------------
         if (severityValue == null && this.settings.rules.enabled.value === true) {
 
-            const op = this.settings.rules.operator.value; // "eq" | "neq" | "gt" | "lt"
+            const op = this.settings.rules.operator.value;        // "eq" | "neq" | "gt" | "lt"
+            const compareSource = this.settings.rules.compareSource.value; // "field" | "fixed";
 
-            const valNum = Number(triggerValue);
-            const cmpNum = Number(compareToValue);
-            const bothNumeric = !isNaN(valNum) && !isNaN(cmpNum);
+            // Determine comparison target
+            let compareTarget: any = null;
+            if (compareSource === "field") {
+                compareTarget = compareToValue;
+            } else {
+                compareTarget = this.settings.rules.fixedValue.value;
+            }
+
+            const hasTrigger = triggerValue !== null && triggerValue !== undefined && triggerValue !== "";
+            const hasCompare = compareTarget !== null && compareTarget !== undefined && compareTarget !== "";
 
             let ruleMatch = false;
 
-            if (bothNumeric) {
-                switch (op) {
-                    case "eq":  ruleMatch = valNum === cmpNum; break;
-                    case "neq": ruleMatch = valNum !== cmpNum; break;
-                    case "gt":  ruleMatch = valNum >  cmpNum;  break;
-                    case "lt":  ruleMatch = valNum <  cmpNum;  break;
-                }
-            } else {
-                const vs = String(triggerValue ?? "");
-                const cs = String(compareToValue ?? "");
-                switch (op) {
-                    case "eq":  ruleMatch = vs === cs; break;
-                    case "neq": ruleMatch = vs !== cs; break;
-                    case "gt":  ruleMatch = vs >  cs;  break;
-                    case "lt":  ruleMatch = vs <  cs;  break;
+            if (hasTrigger && hasCompare) {
+                const valNum = Number(triggerValue);
+                const cmpNum = Number(compareTarget);
+                const bothNumeric = !isNaN(valNum) && !isNaN(cmpNum);
+
+                if (bothNumeric) {
+                    switch (op) {
+                        case "eq":  ruleMatch = valNum === cmpNum; break;
+                        case "neq": ruleMatch = valNum !== cmpNum; break;
+                        case "gt":  ruleMatch = valNum >  cmpNum;  break;
+                        case "lt":  ruleMatch = valNum <  cmpNum;  break;
+                    }
+                } else {
+                    const vs = String(triggerValue ?? "");
+                    const cs = String(compareTarget ?? "");
+                    switch (op) {
+                        case "eq":  ruleMatch = vs === cs; break;
+                        case "neq": ruleMatch = vs !== cs; break;
+                        case "gt":  ruleMatch = vs >  cs;  break;
+                        case "lt":  ruleMatch = vs <  cs;  break;
+                    }
                 }
             }
 

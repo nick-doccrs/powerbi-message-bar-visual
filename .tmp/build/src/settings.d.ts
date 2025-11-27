@@ -5,9 +5,11 @@ export declare class RulesCard extends formattingSettings.SimpleCard {
     displayName: string;
     enabled: formattingSettings.ToggleSwitch;
     operator: formattingSettings.AutoDropdown;
+    compareSource: formattingSettings.AutoDropdown;
+    fixedValue: formattingSettings.NumUpDown;
     trueState: formattingSettings.AutoDropdown;
     falseState: formattingSettings.AutoDropdown;
-    slices: (formattingSettings.ToggleSwitch | formattingSettings.AutoDropdown)[];
+    slices: (formattingSettings.ToggleSwitch | formattingSettings.AutoDropdown | formattingSettings.NumUpDown)[];
 }
 export declare class VisualSettings extends formattingSettings.Model {
     rules: RulesCard;

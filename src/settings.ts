@@ -20,6 +20,18 @@ export class RulesCard extends formattingSettings.SimpleCard {
     value: "eq" // matches capabilities enumeration values
   });
 
+  compareSource = new formattingSettings.AutoDropdown({
+    name: "compareSource",
+    displayName: "Compare source",
+    value: "field" // "field" | "fixed"
+  });
+
+  fixedValue = new formattingSettings.NumUpDown({
+    name: "fixedValue",
+    displayName: "Fixed value",
+    value: 0
+  });
+
   trueState = new formattingSettings.AutoDropdown({
     name: "trueState",
     displayName: "Severity when TRUE",
@@ -32,7 +44,14 @@ export class RulesCard extends formattingSettings.SimpleCard {
     value: "2" // Caution by default
   });
 
-  slices = [this.enabled, this.operator, this.trueState, this.falseState];
+  slices = [
+    this.enabled,
+    this.operator,
+    this.compareSource,
+    this.fixedValue,
+    this.trueState,
+    this.falseState
+  ];
 }
 
 export class VisualSettings extends formattingSettings.Model {

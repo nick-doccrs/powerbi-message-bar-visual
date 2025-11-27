@@ -48,6 +48,19 @@
             ]
           }
         },
+        "compareSource": {
+          "displayName": "Compare source",
+          "type": {
+            "enumeration": [
+              { "displayName": "Field", "value": "field" },
+              { "displayName": "Fixed", "value": "fixed" }
+            ]
+          }
+        },
+        "fixedValue": {
+          "displayName": "Fixed value",
+          "type": { "numeric": true }
+        },
         "trueState": {
           "displayName": "Severity when TRUE",
           "type": {
