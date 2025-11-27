@@ -9,7 +9,7 @@ var pBIMessageBars7AD84BE9472948BCBC7B860DEEE51D16_DEBUG: IVisualPlugin = {
     name: 'pBIMessageBars7AD84BE9472948BCBC7B860DEEE51D16_DEBUG',
     displayName: 'PBIMessageBars',
     class: 'Visual',
-    apiVersion: '5.3.0',
+    apiVersion: '5.11.0',
     create: (options?: VisualConstructorOptions) => {
         if (Visual) {
             return new Visual(options);

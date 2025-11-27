@@ -9,8 +9,7 @@ import VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions;
 import DataView = powerbi.DataView;
 import FormattingModel = powerbi.visuals.FormattingModel;
 
-import { FormattingSettingsService } from "powerbi-visuals-utils-formattingmodel";
-import { VisualFormattingSettingsModel } from "./settings";
+import { VisualSettingsService, VisualSettings } from "./settings";
 
 import ErrorIcon from "./assets/Error.svg";
 import InfoIcon from "./assets/Info.svg";
@@ -30,15 +29,15 @@ export class Visual implements IVisual {
 
     private expanded: boolean = false;
 
-    // formatting pane wiring
-    private formattingSettingsService: FormattingSettingsService;
-    private formattingSettingsModel: VisualFormattingSettingsModel;
+    // formatting model wiring
+    private settingsService: VisualSettingsService;
+    private settings: VisualSettings;
 
     constructor(options: VisualConstructorOptions) {
         this.rootElement = options.element;
 
-        this.formattingSettingsService = new FormattingSettingsService();
-        this.formattingSettingsModel = new VisualFormattingSettingsModel();
+        this.settingsService = new VisualSettingsService();
+        this.settings = new VisualSettings();
 
         // ----- Build DOM -----
         const container = document.createElement("div");
@@ -92,7 +91,7 @@ export class Visual implements IVisual {
 
         // default styling
         this.applySeverity(0);
-        this.applyTextSettings(); // defaults
+        this.applyTextSettings(); // static defaults for now
     }
 
     private updateDetailExpandedState(): void {
@@ -103,22 +102,14 @@ export class Visual implements IVisual {
         }
     }
 
+    // Static defaults for now; Text object is not yet wired into formatting model.
     private applyTextSettings(): void {
-        const text = this.formattingSettingsModel.text;
-
-        const family = String(text.fontFamily.value?.value ?? "Segoe UI");
-        const msgSize = Number(text.messageFontSize.value) || 13;
-        const detSize = Number(text.detailFontSize.value) || 12;
-        const togSize = Number(text.toggleFontSize.value) || 12;
-        const bold = !!text.messageBold.value;
-
-        this.alertRootElement.style.fontFamily = family;
-        this.messageElement.style.fontSize = `${msgSize}px`;
-        this.detailElement.style.fontSize = `${detSize}px`;
-        this.toggleElement.style.fontSize = `${togSize}px`;
-        this.messageElement.style.fontWeight = bold ? "600" : "400";
+        this.alertRootElement.style.fontFamily = "Segoe UI";
+        this.messageElement.style.fontSize = "13px";
+        this.detailElement.style.fontSize = "12px";
+        this.toggleElement.style.fontSize = "12px";
+        this.messageElement.style.fontWeight = "600";
     }
-
 
     private applySeverity(sev: number): void {
         // 0=Info, 1=Success, 2=Caution, 3=Critical
@@ -143,12 +134,10 @@ export class Visual implements IVisual {
     public update(options: VisualUpdateOptions): void {
         const dataView = options.dataViews && options.dataViews[0];
 
-        // populate formatting model from dataview
-        this.formattingSettingsModel =
-            this.formattingSettingsService.populateFormattingSettingsModel(
-                VisualFormattingSettingsModel,
-                dataView
-            );
+        // populate formatting model from dataview (Rules card)
+        if (dataView) {
+            this.settings = this.settingsService.populate(dataView);
+        }
 
         this.applyTextSettings();
 
@@ -196,44 +185,72 @@ export class Visual implements IVisual {
         // If severity role is bound, use it directly
         if (idxSeverity >= 0 && row[idxSeverity] != null && row[idxSeverity] !== "") {
             const sevNum = Number(row[idxSeverity]);
-            if (!Number.isNaN(sevNum)) severityValue = sevNum;
+            if (!Number.isNaN(sevNum)) {
+                severityValue = sevNum;
+            }
         }
 
-        if (idxValue >= 0) triggerValue = row[idxValue];
-        if (idxCompareTo >= 0) compareToValue = row[idxCompareTo];
+        if (idxValue >= 0) {
+            triggerValue = row[idxValue];
+        }
+        if (idxCompareTo >= 0) {
+            compareToValue = row[idxCompareTo];
+        }
 
-        // Otherwise, use compare logic from formatting pane
-        if (severityValue == null && triggerValue != null) {
-            const trig = this.formattingSettingsModel.trigger;
+        //--------------------------------------
+        // RULES: override severity if enabled
+        //--------------------------------------
+        if (severityValue == null && this.settings.rules.enabled.value === true) {
 
-            const useCompareField = !!trig.useCompareField.value;
-            const hardcodedCompareValue = trig.hardcodedCompareValue.value ?? "";
+            const op = this.settings.rules.operator.value; // "eq" | "neq" | "gt" | "lt"
 
-            const sevOnMatch = Number(trig.severityOnMatch.value ?? "0");
-            const sevOnNoMatch = Number(trig.severityOnNoMatch.value ?? "0");
+            const valNum = Number(triggerValue);
+            const cmpNum = Number(compareToValue);
+            const bothNumeric = !isNaN(valNum) && !isNaN(cmpNum);
 
-            let compareTarget: any = hardcodedCompareValue;
-            if (useCompareField && compareToValue != null) {
-                compareTarget = compareToValue;
+            let ruleMatch = false;
+
+            if (bothNumeric) {
+                switch (op) {
+                    case "eq":  ruleMatch = valNum === cmpNum; break;
+                    case "neq": ruleMatch = valNum !== cmpNum; break;
+                    case "gt":  ruleMatch = valNum >  cmpNum;  break;
+                    case "lt":  ruleMatch = valNum <  cmpNum;  break;
+                }
+            } else {
+                const vs = String(triggerValue ?? "");
+                const cs = String(compareToValue ?? "");
+                switch (op) {
+                    case "eq":  ruleMatch = vs === cs; break;
+                    case "neq": ruleMatch = vs !== cs; break;
+                    case "gt":  ruleMatch = vs >  cs;  break;
+                    case "lt":  ruleMatch = vs <  cs;  break;
+                }
             }
 
-            const isMatch = String(triggerValue) === String(compareTarget);
-            severityValue = isMatch ? sevOnMatch : sevOnNoMatch;
+            const trueState  = Number(this.settings.rules.trueState.value);
+            const falseState = Number(this.settings.rules.falseState.value);
+
+            const trueStateSafe  = [0, 1, 2, 3].includes(trueState)  ? trueState  : 1;
+            const falseStateSafe = [0, 1, 2, 3].includes(falseState) ? falseState : 2;
+
+            severityValue = ruleMatch ? trueStateSafe : falseStateSafe;
+        }
+        //--------------------------------------
+
+        if (severityValue == null) {
+            severityValue = 0;
         }
 
-        if (severityValue == null) severityValue = 0;
-
         this.messageElement.textContent = messageText;
-        this.detailElement.textContent = detailText;
+        this.detailElement.textContent  = detailText;
 
         this.applySeverity(severityValue);
         this.updateDetailExpandedState();
     }
 
-    // REQUIRED for the new formatting pane
+    // REQUIRED for the Formatting Model API
     public getFormattingModel(): FormattingModel {
-        return this.formattingSettingsService.buildFormattingModel(
-            this.formattingSettingsModel
-        );
+        return this.settingsService.build();
     }
 }

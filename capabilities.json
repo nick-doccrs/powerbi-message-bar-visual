@@ -30,19 +30,26 @@
   ],
 
   "objects": {
-    "trigger": {
-      "displayName": "Trigger",
+    "rules": {
+      "displayName": "Rules",
       "properties": {
-        "useCompareField": {
-          "displayName": "Use Compare Field",
+        "enabled": {
+          "displayName": "Enable rules",
           "type": { "bool": true }
         },
-        "hardcodedCompareValue": {
-          "displayName": "Hardcoded Compare Value",
-          "type": { "text": true }
+        "operator": {
+          "displayName": "Operator",
+          "type": {
+            "enumeration": [
+              { "displayName": "Equals (=)",       "value": "eq" },
+              { "displayName": "Not equal (≠)",    "value": "neq" },
+              { "displayName": "Greater than (>)", "value": "gt" },
+              { "displayName": "Less than (<)",    "value": "lt" }
+            ]
+          }
         },
-        "severityOnMatch": {
-          "displayName": "Severity on Match",
+        "trueState": {
+          "displayName": "Severity when TRUE",
           "type": {
             "enumeration": [
               { "displayName": "Info",     "value": "0" },
@@ -52,8 +59,8 @@
             ]
           }
         },
-        "severityOnNoMatch": {
-          "displayName": "Severity on No Match",
+        "falseState": {
+          "displayName": "Severity when FALSE",
           "type": {
             "enumeration": [
               { "displayName": "Info",     "value": "0" },
