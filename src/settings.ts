@@ -4,60 +4,97 @@ import {
   formattingSettings
 } from "powerbi-visuals-utils-formattingmodel";
 
-export class RulesCard extends formattingSettings.SimpleCard {
-  name = "rules";
-  displayName = "Rules";
+export class RuleCard extends formattingSettings.SimpleCard {
+  enabled: formattingSettings.ToggleSwitch;
+  scenario: formattingSettings.TextInput;
+  operator: formattingSettings.AutoDropdown;
+  compareSource: formattingSettings.AutoDropdown;
+  fixedValue: formattingSettings.NumUpDown;
+  trueState: formattingSettings.AutoDropdown;
+  falseState: formattingSettings.AutoDropdown;
 
-  enabled = new formattingSettings.ToggleSwitch({
-    name: "enabled",
-    displayName: "Enable rules",
-    value: true
-  });
+  constructor(cardName: string, cardDisplayName: string) {
+    super();
 
-  operator = new formattingSettings.AutoDropdown({
-    name: "operator",
-    displayName: "Operator",
-    value: "eq" // matches capabilities enumeration values
-  });
+    this.name = cardName;
+    this.displayName = cardDisplayName;
 
-  compareSource = new formattingSettings.AutoDropdown({
-    name: "compareSource",
-    displayName: "Compare source",
-    value: "field" // "field" | "fixed"
-  });
+    this.enabled = new formattingSettings.ToggleSwitch({
+      name: "enabled",
+      displayName: "Enable rule",
+      value: true
+    });
 
-  fixedValue = new formattingSettings.NumUpDown({
-    name: "fixedValue",
-    displayName: "Fixed value",
-    value: 0
-  });
+    this.scenario = new formattingSettings.TextInput({
+      name: "scenario",
+      displayName: "Scenario",
+      value: "",
+      placeholder: "Enter scenario name"     // ← REQUIRED
+    });
 
-  trueState = new formattingSettings.AutoDropdown({
-    name: "trueState",
-    displayName: "Severity when TRUE",
-    value: "1" // Success by default
-  });
+    this.operator = new formattingSettings.AutoDropdown({
+      name: "operator",
+      displayName: "Operator",
+      value: "eq"
+    });
 
-  falseState = new formattingSettings.AutoDropdown({
-    name: "falseState",
-    displayName: "Severity when FALSE",
-    value: "2" // Caution by default
-  });
+    this.compareSource = new formattingSettings.AutoDropdown({
+      name: "compareSource",
+      displayName: "Compare source",
+      value: "field"
+    });
 
-  slices = [
-    this.enabled,
-    this.operator,
-    this.compareSource,
-    this.fixedValue,
-    this.trueState,
-    this.falseState
-  ];
+    this.fixedValue = new formattingSettings.NumUpDown({
+      name: "fixedValue",
+      displayName: "Fixed value",
+      value: 0
+    });
+
+    this.trueState = new formattingSettings.AutoDropdown({
+      name: "trueState",
+      displayName: "Severity when TRUE",
+      value: "1"
+    });
+
+    this.falseState = new formattingSettings.AutoDropdown({
+      name: "falseState",
+      displayName: "Severity when FALSE",
+      value: "2"
+    });
+
+    this.slices = [
+      this.enabled,
+      this.scenario,
+      this.operator,
+      this.compareSource,
+      this.fixedValue,
+      this.trueState,
+      this.falseState
+    ];
+  }
 }
 
-export class VisualSettings extends formattingSettings.Model {
-  rules = new RulesCard();
 
-  cards = [this.rules];
+export class VisualSettings extends formattingSettings.Model {
+  rule1 = new RuleCard("rule1", "Rule 1");
+  rule2 = new RuleCard("rule2", "Rule 2");
+  rule3 = new RuleCard("rule3", "Rule 3");
+  rule4 = new RuleCard("rule4", "Rule 4");
+  rule5 = new RuleCard("rule5", "Rule 5");
+  rule6 = new RuleCard("rule6", "Rule 6");
+  rule7 = new RuleCard("rule7", "Rule 7");
+  rule8 = new RuleCard("rule8", "Rule 8");
+
+  cards = [
+    this.rule1,
+    this.rule2,
+    this.rule3,
+    this.rule4,
+    this.rule5,
+    this.rule6,
+    this.rule7,
+    this.rule8
+  ];
 }
 
 export class VisualSettingsService {

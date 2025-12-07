@@ -1,4 +1,4 @@
-import "./../style/visual.less";
+import "../style/visual.less";
 import powerbi from "powerbi-visuals-api";
 import IVisual = powerbi.extensibility.visual.IVisual;
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -19,6 +19,7 @@ export declare class Visual implements IVisual {
     private updateDetailExpandedState;
     private applyTextSettings;
     private applySeverity;
+    private evaluateRule;
     update(options: VisualUpdateOptions): void;
     getFormattingModel(): FormattingModel;
 }

@@ -2,7 +2,6 @@
   width: 100%;
   height: 100%;
   display: flex;
-  /* keep bar height fixed */
   align-items: flex-start;
   justify-content: center;
   padding: 8px;
@@ -17,12 +16,10 @@
   flex-direction: column;
   width: 100%;
   padding: 8px 12px;
-  /* This defines the bar's content width */
   border-radius: 6px;
   /* overridden by severity to 4px */
-  background-color: #1e88e5;
+  background-color: #f5f5f5;
   /* overridden by severity */
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
   color: #111111;
   font-family: "Segoe UI", sans-serif;
   box-sizing: border-box;
@@ -30,6 +27,8 @@
   overflow: visible !important;
   align-self: flex-start;
   height: auto;
+  /* NO SHADOW */
+  box-shadow: none;
 }
 /* Header row */
 .alert-header {
@@ -46,41 +45,47 @@
   display: block;
 }
 /* Text elements */
-.alert-message,
-.alert-toggle {
-  line-height: 20px;
+.alert-message {
   display: flex;
   align-items: center;
+  flex: 1;
+  gap: 4px;
 }
-.alert-message {
+.alert-message-text {
   font-size: 13px;
   font-weight: 600;
-  flex: 1;
+  line-height: 20px;
 }
-.alert-toggle {
+/* Details link at end of message text */
+.alert-details-link {
   font-size: 12px;
+  line-height: 20px;
   cursor: pointer;
+  text-decoration: underline;
+  color: #005a9e;
   flex: 0 0 auto;
 }
-/* ---------------------------------------------------------
-   POPOVER DETAILS – EXACT same width as content area
-   --------------------------------------------------------- */
+/* Dismiss icon on the right, same size as left icon */
+.alert-dismiss {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+  display: block;
+  cursor: pointer;
+  margin-left: 8px;
+}
+/* Popover details – same width as bar */
 .alert-detail {
   position: absolute;
   top: calc(100% + 6px);
-  /* Popover aligns to bar edges exactly */
   left: 0;
   right: 0;
-  /* Match padding of main bar */
   padding: 8px 12px;
-  /* Inherit all bar styling */
   background: inherit;
   border: inherit;
   color: inherit;
   border-radius: inherit;
-  box-shadow: inherit;
   box-sizing: border-box;
-  /* Collapsed state */
   max-height: 0;
   opacity: 0;
   overflow-y: hidden;
