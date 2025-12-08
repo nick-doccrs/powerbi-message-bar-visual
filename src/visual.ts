@@ -29,8 +29,12 @@ export class Visual implements IVisual {
     private alertRootElement: HTMLElement;
     private headerElement: HTMLElement;
     private iconElement: HTMLImageElement;
-    private messageElement: HTMLElement;
-    private toggleElement: HTMLElement;
+
+    private messageContainerElement: HTMLElement;   // wrapper div
+    private messageTextElement: HTMLElement;        // span with main message text
+    private toggleElement: HTMLElement;             // span "Details" link
+
+    private remainingElement: HTMLElement;          // "N more" label
     private detailElement: HTMLElement;
     private dismissElement: HTMLImageElement;
 
@@ -62,22 +66,34 @@ export class Visual implements IVisual {
         icon.className = "alert-icon-img";
         icon.alt = "status icon";
 
-        const message = document.createElement("div");
-        message.className = "alert-message";
-        message.textContent = "Message (bind a table)";
+        // Message + inline Details link
+        const messageContainer = document.createElement("div");
+        messageContainer.className = "alert-message";
 
-        const toggle = document.createElement("div");
+        const messageText = document.createElement("span");
+        messageText.className = "alert-message-text";
+        messageText.textContent = "Message (bind a table)";
+
+        const toggle = document.createElement("span");
         toggle.className = "alert-toggle";
-        toggle.textContent = "Details";
+        toggle.textContent = ""; // will be "Details" when we have detail text
 
+        messageContainer.appendChild(messageText);
+        messageContainer.appendChild(toggle);
+
+        // Remaining-label: "N more"
+        const remaining = document.createElement("div");
+        remaining.className = "alert-remaining";
+        remaining.textContent = "";
+        
         const dismiss = document.createElement("img");
         dismiss.className = "alert-dismiss";
         dismiss.src = DismissIcon;
         dismiss.alt = "Dismiss";
 
         header.appendChild(icon);
-        header.appendChild(message);
-        header.appendChild(toggle);
+        header.appendChild(messageContainer);
+        header.appendChild(remaining);
         header.appendChild(dismiss);
 
         const detail = document.createElement("div");
@@ -92,18 +108,24 @@ export class Visual implements IVisual {
         this.alertRootElement = alertRoot;
         this.headerElement = header;
         this.iconElement = icon;
-        this.messageElement = message;
+        this.messageContainerElement = messageContainer;
+        this.messageTextElement = messageText;
         this.toggleElement = toggle;
+        this.remainingElement = remaining;
         this.detailElement = detail;
         this.dismissElement = dismiss;
 
-        // Interaction
+        // Click: toggle details expand/collapse
         this.toggleElement.onclick = (e) => {
             e.stopPropagation();
+            if (!this.detailElement.textContent) {
+                return;
+            }
             this.expanded = !this.expanded;
             this.updateDetailExpandedState();
         };
 
+        // Click: dismiss current message and show next
         this.dismissElement.onclick = (e) => {
             e.stopPropagation();
             this.showNextMessage();
@@ -111,22 +133,25 @@ export class Visual implements IVisual {
 
         this.applySeverity(0);
         this.applyTextSettings();
+        this.clearVisual();
     }
 
     private updateDetailExpandedState(): void {
-        if (this.expanded) {
+        if (this.expanded && this.detailElement.textContent) {
             this.detailElement.classList.add("expanded");
+            this.toggleElement.textContent = "Hide details";
         } else {
             this.detailElement.classList.remove("expanded");
+            this.toggleElement.textContent = this.detailElement.textContent ? "Details" : "";
         }
     }
 
     private applyTextSettings(): void {
         this.alertRootElement.style.fontFamily = "Segoe UI";
-        this.messageElement.style.fontSize = "13px";
+        this.messageContainerElement.style.fontSize = "13px";
         this.detailElement.style.fontSize = "12px";
         this.toggleElement.style.fontSize = "12px";
-        this.messageElement.style.fontWeight = "600";
+        this.messageTextElement.style.fontWeight = "600";
     }
 
     private applySeverity(sev: number): void {
@@ -149,16 +174,13 @@ export class Visual implements IVisual {
         this.alertRootElement.style.visibility = "visible";
     }
 
-    // Evaluate a single rule against a Value / CompareTo pair.
-    // Returns severity (0..3) when the rule condition is TRUE.
-    // Returns null when the rule does not trigger (no message).
     private evaluateRule(rule: RuleCard, triggerValue: any, compareToValue: any): number | null {
         if (!rule || rule.enabled.value !== true) {
             return null;
         }
 
-        const op = rule.operator.value as string;               // "eq" | "neq" | "gt" | "lt"
-        const compareSource = rule.compareSource.value as string; // "field" | "fixed"
+        const op = rule.operator.value as string;
+        const compareSource = rule.compareSource.value as string;
 
         let compareTarget: any = null;
         if (compareSource === "field") {
@@ -215,10 +237,12 @@ export class Visual implements IVisual {
         return trueStateSafe;
     }
 
-    // Completely blank / hide the visual
     private clearVisual(): void {
-        this.messageElement.textContent = "";
+        this.messageTextElement.textContent = "";
         this.detailElement.textContent = "";
+        this.toggleElement.textContent = "";
+        this.remainingElement.textContent = "";
+        this.remainingElement.style.display = "none";
         this.iconElement.src = "";
         this.alertRootElement.style.backgroundColor = "transparent";
         this.alertRootElement.style.border = "none";
@@ -228,6 +252,17 @@ export class Visual implements IVisual {
         this.updateDetailExpandedState();
     }
 
+    private updateRemainingCount(): void {
+        const remaining = this.messages ? this.messages.length - 1 : 0;
+        if (remaining > 0) {
+            this.remainingElement.textContent = `${remaining} more`;
+            this.remainingElement.style.display = "block";
+        } else {
+            this.remainingElement.textContent = "";
+            this.remainingElement.style.display = "none";
+        }
+    }
+
     private showCurrentMessage(): void {
         if (!this.messages || this.messages.length === 0) {
             this.clearVisual();
@@ -235,19 +270,29 @@ export class Visual implements IVisual {
         }
 
         const msg = this.messages[this.currentMessageIndex];
-        this.messageElement.textContent = msg.message;
-        this.detailElement.textContent = msg.detail;
+
+        this.messageTextElement.textContent = msg.message;
+        this.detailElement.textContent = msg.detail || "";
+
+        if (msg.detail) {
+            this.toggleElement.style.display = "inline";
+        } else {
+            this.toggleElement.style.display = "none";
+        }
+
+        this.expanded = false;
+        this.updateDetailExpandedState();
         this.applySeverity(msg.severity);
+        this.updateRemainingCount();
     }
 
-    // Remove the current message; if none left, blank the visual.
     private showNextMessage(): void {
         if (!this.messages || this.messages.length === 0) {
             this.clearVisual();
             return;
         }
 
-        // Remove current message from the queue
+        // Remove current message
         this.messages.splice(this.currentMessageIndex, 1);
 
         if (this.messages.length === 0) {
@@ -309,7 +354,7 @@ export class Visual implements IVisual {
             this.settings.rule8
         ];
 
-        // Build message queue: one message per rule that triggers
+        // Build stacked messages: one per rule that triggers
         for (const rule of rules) {
             if (!rule.enabled.value) continue;
 
@@ -332,7 +377,7 @@ export class Visual implements IVisual {
             const compareToValue = idxCompareTo >= 0 ? matchedRow[idxCompareTo] : null;
 
             const severity = this.evaluateRule(rule, triggerValue, compareToValue);
-            if (severity == null) continue; // rule didn't trigger → no message
+            if (severity == null) continue;
 
             const msgText =
                 idxMessage >= 0 && matchedRow[idxMessage] != null
@@ -351,7 +396,6 @@ export class Visual implements IVisual {
             });
         }
 
-        // If no triggered messages, blank the visual
         if (this.messages.length === 0) {
             this.clearVisual();
             return;

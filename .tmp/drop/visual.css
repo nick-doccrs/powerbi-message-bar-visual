@@ -17,7 +17,7 @@
   width: 100%;
   padding: 8px 12px;
   border-radius: 6px;
-  /* overridden by severity to 4px */
+  /* overridden by severity if needed */
   background-color: #f5f5f5;
   /* overridden by severity */
   color: #111111;
@@ -27,13 +27,13 @@
   overflow: visible !important;
   align-self: flex-start;
   height: auto;
-  /* NO SHADOW */
   box-shadow: none;
 }
 /* Header row */
 .alert-header {
   display: flex;
   align-items: center;
+  justify-content: flex-start;
   gap: 8px;
   width: 100%;
 }
@@ -44,7 +44,7 @@
   flex: 0 0 20px;
   display: block;
 }
-/* Text elements */
+/* Message + inline details link */
 .alert-message {
   display: flex;
   align-items: center;
@@ -56,8 +56,8 @@
   font-weight: 600;
   line-height: 20px;
 }
-/* Details link at end of message text */
-.alert-details-link {
+/* Details link (inline, blue, underlined) */
+.alert-toggle {
   font-size: 12px;
   line-height: 20px;
   cursor: pointer;
@@ -65,7 +65,10 @@
   color: #005a9e;
   flex: 0 0 auto;
 }
-/* Dismiss icon on the right, same size as left icon */
+.alert-toggle:hover {
+  text-decoration: none;
+}
+/* Dismiss icon on the right */
 .alert-dismiss {
   width: 20px;
   height: 20px;
@@ -73,8 +76,12 @@
   display: block;
   cursor: pointer;
   margin-left: 8px;
+  border-radius: 50%;
+  /* soften appearance */
+  padding: 2px;
+  box-sizing: content-box;
 }
-/* Popover details – same width as bar */
+/* Popover details – same width as bar, appears below */
 .alert-detail {
   position: absolute;
   top: calc(100% + 6px);
@@ -99,19 +106,12 @@
   overflow-y: auto;
   pointer-events: auto;
 }
-.alert-header {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-}
-.alert-dismiss {
+.alert-remaining {
   margin-left: 8px;
-  width: 20px;
-  height: 20px;
-  cursor: pointer;
-  border-radius: 50%;
-  padding: 2px;
-  box-sizing: content-box;
+  margin-right: 4px;
+  font-size: 11px;
+  color: #555555;
+  white-space: nowrap;
 }
 
 

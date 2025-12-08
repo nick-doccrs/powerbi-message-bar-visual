@@ -9,8 +9,10 @@ export declare class Visual implements IVisual {
     private alertRootElement;
     private headerElement;
     private iconElement;
-    private messageElement;
+    private messageContainerElement;
+    private messageTextElement;
     private toggleElement;
+    private remainingElement;
     private detailElement;
     private dismissElement;
     private expanded;
@@ -24,6 +26,7 @@ export declare class Visual implements IVisual {
     private applySeverity;
     private evaluateRule;
     private clearVisual;
+    private updateRemainingCount;
     private showCurrentMessage;
     private showNextMessage;
     update(options: VisualUpdateOptions): void;
