@@ -17,9 +17,7 @@
   width: 100%;
   padding: 8px 12px;
   border-radius: 6px;
-  /* overridden by severity if needed */
   background-color: #f5f5f5;
-  /* overridden by severity */
   color: #111111;
   font-family: "Segoe UI", sans-serif;
   box-sizing: border-box;
@@ -68,6 +66,14 @@
 .alert-toggle:hover {
   text-decoration: none;
 }
+/* Remaining label: "N more" */
+.alert-remaining {
+  margin-left: 8px;
+  margin-right: 4px;
+  font-size: 11px;
+  color: #555555;
+  white-space: nowrap;
+}
 /* Dismiss icon on the right */
 .alert-dismiss {
   width: 20px;
@@ -75,9 +81,8 @@
   flex: 0 0 20px;
   display: block;
   cursor: pointer;
-  margin-left: 8px;
+  margin-left: 4px;
   border-radius: 50%;
-  /* soften appearance */
   padding: 2px;
   box-sizing: content-box;
 }
@@ -105,13 +110,6 @@
   opacity: 1;
   overflow-y: auto;
   pointer-events: auto;
-}
-.alert-remaining {
-  margin-left: 8px;
-  margin-right: 4px;
-  font-size: 11px;
-  color: #555555;
-  white-space: nowrap;
 }
 
 

@@ -30,11 +30,11 @@ export class Visual implements IVisual {
     private headerElement: HTMLElement;
     private iconElement: HTMLImageElement;
 
-    private messageContainerElement: HTMLElement;   // wrapper div
-    private messageTextElement: HTMLElement;        // span with main message text
-    private toggleElement: HTMLElement;             // span "Details" link
+    private messageContainerElement: HTMLElement;
+    private messageTextElement: HTMLElement;
+    private toggleElement: HTMLElement;
 
-    private remainingElement: HTMLElement;          // "N more" label
+    private remainingElement: HTMLElement;
     private detailElement: HTMLElement;
     private dismissElement: HTMLImageElement;
 
@@ -52,7 +52,6 @@ export class Visual implements IVisual {
         this.settingsService = new VisualSettingsService();
         this.settings = new VisualSettings();
 
-        // ----- Build DOM -----
         const container = document.createElement("div");
         container.className = "visual";
 
@@ -66,22 +65,20 @@ export class Visual implements IVisual {
         icon.className = "alert-icon-img";
         icon.alt = "status icon";
 
-        // Message + inline Details link
         const messageContainer = document.createElement("div");
         messageContainer.className = "alert-message";
 
         const messageText = document.createElement("span");
         messageText.className = "alert-message-text";
-        messageText.textContent = "Message (bind a table)";
+        messageText.textContent = "Message (configure rules)";
 
         const toggle = document.createElement("span");
         toggle.className = "alert-toggle";
-        toggle.textContent = ""; // will be "Details" when we have detail text
+        toggle.textContent = "";
 
         messageContainer.appendChild(messageText);
         messageContainer.appendChild(toggle);
 
-        // Remaining-label: "N more"
         const remaining = document.createElement("div");
         remaining.className = "alert-remaining";
         remaining.textContent = "";
@@ -115,7 +112,6 @@ export class Visual implements IVisual {
         this.detailElement = detail;
         this.dismissElement = dismiss;
 
-        // Click: toggle details expand/collapse
         this.toggleElement.onclick = (e) => {
             e.stopPropagation();
             if (!this.detailElement.textContent) {
@@ -125,7 +121,6 @@ export class Visual implements IVisual {
             this.updateDetailExpandedState();
         };
 
-        // Click: dismiss current message and show next
         this.dismissElement.onclick = (e) => {
             e.stopPropagation();
             this.showNextMessage();
@@ -174,8 +169,7 @@ export class Visual implements IVisual {
         this.alertRootElement.style.visibility = "visible";
     }
 
-    // TRUE/FALSE handling with "No message" support on falseState
-    private evaluateRule(rule: RuleCard, triggerValue: any, compareToValue: any): number | null {
+    private evaluateCondition(rule: RuleCard, triggerValue: any, compareToValue: any): boolean | null {
         if (!rule || rule.enabled.value !== true) {
             return null;
         }
@@ -204,51 +198,42 @@ export class Visual implements IVisual {
             return null;
         }
 
-        let ruleMatch = false;
-
         const valNum = Number(triggerValue);
         const cmpNum = Number(compareTarget);
         const bothNumeric = !isNaN(valNum) && !isNaN(cmpNum);
 
+        let result = false;
+
         if (bothNumeric) {
             switch (op) {
-                case "eq":  ruleMatch = valNum === cmpNum; break;
-                case "neq": ruleMatch = valNum !== cmpNum; break;
-                case "gt":  ruleMatch = valNum >  cmpNum;  break;
-                case "lt":  ruleMatch = valNum <  cmpNum;  break;
+                case "eq":  result = valNum === cmpNum; break;
+                case "neq": result = valNum !== cmpNum; break;
+                case "gt":  result = valNum >  cmpNum;  break;
+                case "lt":  result = valNum <  cmpNum;  break;
             }
         } else {
             const vs = String(triggerValue ?? "");
             const cs = String(compareTarget ?? "");
             switch (op) {
-                case "eq":  ruleMatch = vs === cs; break;
-                case "neq": ruleMatch = vs !== cs; break;
-                case "gt":  ruleMatch = vs >  cs;  break;
-                case "lt":  ruleMatch = vs <  cs;  break;
+                case "eq":  result = vs === cs; break;
+                case "neq": result = vs !== cs; break;
+                case "gt":  result = vs >  cs;  break;
+                case "lt":  result = vs <  cs;  break;
             }
         }
 
-        const trueStateValue  = rule.trueState.value as string;   // "0".."3"
-        const falseStateValue = rule.falseState.value as string;  // "none" or "0".."3"
+        return result;
+    }
 
-        const toSeverity = (val: string, fallback: number): number | null => {
-            if (val === "none") {
-                return null; // explicitly: no message
-            }
-            const n = Number(val);
-            if ([0, 1, 2, 3].includes(n)) {
-                return n;
-            }
-            return fallback;
-        };
-
-        if (ruleMatch) {
-            // TRUE path (you *could* later allow "none" here too if desired)
-            return toSeverity(trueStateValue, 1);   // default fallback: Success
-        } else {
-            // FALSE path – honour "No message"
-            return toSeverity(falseStateValue, 0);  // default fallback: Info
+    private getSeverityForState(stateValue: string, fallback: number): number | null {
+        if (stateValue === "none") {
+            return null;
         }
+        const n = Number(stateValue);
+        if ([0, 1, 2, 3].includes(n)) {
+            return n;
+        }
+        return fallback;
     }
 
     private clearVisual(): void {
@@ -306,7 +291,6 @@ export class Visual implements IVisual {
             return;
         }
 
-        // Remove current message
         this.messages.splice(this.currentMessageIndex, 1);
 
         if (this.messages.length === 0) {
@@ -352,8 +336,6 @@ export class Visual implements IVisual {
         };
 
         const idxScenario  = getIndexByRole("scenario");
-        const idxMessage   = getIndexByRole("message");
-        const idxDetail    = getIndexByRole("detail");
         const idxValue     = getIndexByRole("value");
         const idxCompareTo = getIndexByRole("compareTo");
 
@@ -368,40 +350,61 @@ export class Visual implements IVisual {
             this.settings.rule8
         ];
 
-        // Build stacked messages: one per rule that triggers
+        const findRowByScenario = (scenarioName: string): any[] | null => {
+            if (!scenarioName || idxScenario < 0) return null;
+            const key = scenarioName.trim().toLowerCase();
+            for (const r of rows) {
+                const sVal = r[idxScenario];
+                if (sVal != null && String(sVal).trim().toLowerCase() === key) {
+                    return r;
+                }
+            }
+            return null;
+        };
+
         for (const rule of rules) {
             if (!rule.enabled.value) continue;
 
             const scenarioName = (rule.scenario.value || "").toString().trim();
             if (!scenarioName || idxScenario < 0) continue;
 
-            let matchedRow: any[] | null = null;
+            const evalRow = findRowByScenario(scenarioName);
+            if (!evalRow) continue;
 
-            for (const r of rows) {
-                const sVal = r[idxScenario];
-                if (sVal != null && String(sVal) === scenarioName) {
-                    matchedRow = r;
-                    break;
-                }
+            const triggerValue   = idxValue     >= 0 ? evalRow[idxValue]     : null;
+            const compareToValue = idxCompareTo >= 0 ? evalRow[idxCompareTo] : null;
+
+            const cond = this.evaluateCondition(rule, triggerValue, compareToValue);
+            if (cond === null) continue;
+
+            const isTrue = cond === true;
+
+            const stateValue = isTrue
+                ? (rule.trueState.value as string)
+                : (rule.falseState.value as string);
+
+            const severity = this.getSeverityForState(
+                stateValue,
+                isTrue ? 1 : 0
+            );
+            if (severity === null) {
+                continue;
             }
 
-            if (!matchedRow) continue;
+            const rawMsg = isTrue
+                ? (rule.messageTrue.value || "")
+                : (rule.messageFalse.value || "");
 
-            const triggerValue   = idxValue     >= 0 ? matchedRow[idxValue]     : null;
-            const compareToValue = idxCompareTo >= 0 ? matchedRow[idxCompareTo] : null;
+            const rawDetail = isTrue
+                ? (rule.detailTrue.value || "")
+                : (rule.detailFalse.value || "");
 
-            const severity = this.evaluateRule(rule, triggerValue, compareToValue);
-            if (severity == null) continue;  // rule produces no message
+            const msgText = rawMsg.toString().trim();
+            const detailText = rawDetail.toString().trim();
 
-            const msgText =
-                idxMessage >= 0 && matchedRow[idxMessage] != null
-                    ? String(matchedRow[idxMessage])
-                    : "Message";
-
-            const detailText =
-                idxDetail >= 0 && matchedRow[idxDetail] != null
-                    ? String(matchedRow[idxDetail])
-                    : "";
+            if (!msgText) {
+                continue;
+            }
 
             this.messages.push({
                 message: msgText,

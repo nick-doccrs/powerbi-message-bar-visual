@@ -12,6 +12,10 @@ export class RuleCard extends formattingSettings.SimpleCard {
   fixedValue: formattingSettings.NumUpDown;
   trueState: formattingSettings.AutoDropdown;
   falseState: formattingSettings.AutoDropdown;
+  messageTrue: formattingSettings.TextInput;
+  detailTrue: formattingSettings.TextInput;
+  messageFalse: formattingSettings.TextInput;
+  detailFalse: formattingSettings.TextInput;
 
   constructor(cardName: string, cardDisplayName: string) {
     super();
@@ -29,7 +33,7 @@ export class RuleCard extends formattingSettings.SimpleCard {
       name: "scenario",
       displayName: "Scenario",
       value: "",
-      placeholder: "Enter scenario name"
+      placeholder: "Scenario key (e.g. Fulfilment Rate)"
     });
 
     this.operator = new formattingSettings.AutoDropdown({
@@ -59,7 +63,35 @@ export class RuleCard extends formattingSettings.SimpleCard {
     this.falseState = new formattingSettings.AutoDropdown({
       name: "falseState",
       displayName: "Severity when FALSE",
-      value: "none"   // default: no message when FALSE
+      value: "none"
+    });
+
+    this.messageTrue = new formattingSettings.TextInput({
+      name: "messageTrue",
+      displayName: "Message (TRUE)",
+      value: "",
+      placeholder: "Shown when condition is TRUE"
+    });
+
+    this.detailTrue = new formattingSettings.TextInput({
+      name: "detailTrue",
+      displayName: "Detail (TRUE)",
+      value: "",
+      placeholder: "Extra info when TRUE (optional)"
+    });
+
+    this.messageFalse = new formattingSettings.TextInput({
+      name: "messageFalse",
+      displayName: "Message (FALSE)",
+      value: "",
+      placeholder: "Shown when condition is FALSE"
+    });
+
+    this.detailFalse = new formattingSettings.TextInput({
+      name: "detailFalse",
+      displayName: "Detail (FALSE)",
+      value: "",
+      placeholder: "Extra info when FALSE (optional)"
     });
 
     this.slices = [
@@ -69,7 +101,11 @@ export class RuleCard extends formattingSettings.SimpleCard {
       this.compareSource,
       this.fixedValue,
       this.trueState,
-      this.falseState
+      this.falseState,
+      this.messageTrue,
+      this.detailTrue,
+      this.messageFalse,
+      this.detailFalse
     ];
   }
 }

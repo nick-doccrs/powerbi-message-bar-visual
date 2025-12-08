@@ -8,6 +8,10 @@ export declare class RuleCard extends formattingSettings.SimpleCard {
     fixedValue: formattingSettings.NumUpDown;
     trueState: formattingSettings.AutoDropdown;
     falseState: formattingSettings.AutoDropdown;
+    messageTrue: formattingSettings.TextInput;
+    detailTrue: formattingSettings.TextInput;
+    messageFalse: formattingSettings.TextInput;
+    detailFalse: formattingSettings.TextInput;
     constructor(cardName: string, cardDisplayName: string);
 }
 export declare class VisualSettings extends formattingSettings.Model {

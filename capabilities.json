@@ -4,9 +4,6 @@
 
   "dataRoles": [
     { "name": "scenario", "kind": "Grouping", "displayName": "Scenario" },
-    { "name": "message",   "kind": "Measure",  "displayName": "Message" },
-    { "name": "detail",    "kind": "Measure",  "displayName": "Detail" },
-    { "name": "severity",  "kind": "Measure",  "displayName": "Severity (optional)" },
     { "name": "value",     "kind": "Measure",  "displayName": "Value" },
     { "name": "compareTo", "kind": "Measure",  "displayName": "Compare to" }
   ],
@@ -17,9 +14,6 @@
         "rows": {
           "select": [
             { "for": { "in": "scenario" } },
-            { "for": { "in": "message" } },
-            { "for": { "in": "detail" } },
-            { "for": { "in": "severity" } },
             { "for": { "in": "value" } },
             { "for": { "in": "compareTo" } }
           ],
@@ -89,6 +83,22 @@
               { "displayName": "Critical",   "value": "3" }
             ]
           }
+        },
+        "messageTrue": {
+          "displayName": "Message (TRUE)",
+          "type": { "text": true }
+        },
+        "detailTrue": {
+          "displayName": "Detail (TRUE)",
+          "type": { "text": true }
+        },
+        "messageFalse": {
+          "displayName": "Message (FALSE)",
+          "type": { "text": true }
+        },
+        "detailFalse": {
+          "displayName": "Detail (FALSE)",
+          "type": { "text": true }
         }
       }
     },
@@ -141,6 +151,22 @@
               { "displayName": "Critical",   "value": "3" }
             ]
           }
+        },
+        "messageTrue": {
+          "displayName": "Message (TRUE)",
+          "type": { "text": true }
+        },
+        "detailTrue": {
+          "displayName": "Detail (TRUE)",
+          "type": { "text": true }
+        },
+        "messageFalse": {
+          "displayName": "Message (FALSE)",
+          "type": { "text": true }
+        },
+        "detailFalse": {
+          "displayName": "Detail (FALSE)",
+          "type": { "text": true }
         }
       }
     },
@@ -193,6 +219,22 @@
               { "displayName": "Critical",   "value": "3" }
             ]
           }
+        },
+        "messageTrue": {
+          "displayName": "Message (TRUE)",
+          "type": { "text": true }
+        },
+        "detailTrue": {
+          "displayName": "Detail (TRUE)",
+          "type": { "text": true }
+        },
+        "messageFalse": {
+          "displayName": "Message (FALSE)",
+          "type": { "text": true }
+        },
+        "detailFalse": {
+          "displayName": "Detail (FALSE)",
+          "type": { "text": true }
         }
       }
     },
@@ -245,6 +287,22 @@
               { "displayName": "Critical",   "value": "3" }
             ]
           }
+        },
+        "messageTrue": {
+          "displayName": "Message (TRUE)",
+          "type": { "text": true }
+        },
+        "detailTrue": {
+          "displayName": "Detail (TRUE)",
+          "type": { "text": true }
+        },
+        "messageFalse": {
+          "displayName": "Message (FALSE)",
+          "type": { "text": true }
+        },
+        "detailFalse": {
+          "displayName": "Detail (FALSE)",
+          "type": { "text": true }
         }
       }
     },
@@ -297,6 +355,22 @@
               { "displayName": "Critical",   "value": "3" }
             ]
           }
+        },
+        "messageTrue": {
+          "displayName": "Message (TRUE)",
+          "type": { "text": true }
+        },
+        "detailTrue": {
+          "displayName": "Detail (TRUE)",
+          "type": { "text": true }
+        },
+        "messageFalse": {
+          "displayName": "Message (FALSE)",
+          "type": { "text": true }
+        },
+        "detailFalse": {
+          "displayName": "Detail (FALSE)",
+          "type": { "text": true }
         }
       }
     },
@@ -349,6 +423,22 @@
               { "displayName": "Critical",   "value": "3" }
             ]
           }
+        },
+        "messageTrue": {
+          "displayName": "Message (TRUE)",
+          "type": { "text": true }
+        },
+        "detailTrue": {
+          "displayName": "Detail (TRUE)",
+          "type": { "text": true }
+        },
+        "messageFalse": {
+          "displayName": "Message (FALSE)",
+          "type": { "text": true }
+        },
+        "detailFalse": {
+          "displayName": "Detail (FALSE)",
+          "type": { "text": true }
         }
       }
     },
@@ -401,6 +491,22 @@
               { "displayName": "Critical",   "value": "3" }
             ]
           }
+        },
+        "messageTrue": {
+          "displayName": "Message (TRUE)",
+          "type": { "text": true }
+        },
+        "detailTrue": {
+          "displayName": "Detail (TRUE)",
+          "type": { "text": true }
+        },
+        "messageFalse": {
+          "displayName": "Message (FALSE)",
+          "type": { "text": true }
+        },
+        "detailFalse": {
+          "displayName": "Detail (FALSE)",
+          "type": { "text": true }
         }
       }
     },
@@ -453,6 +559,22 @@
               { "displayName": "Critical",   "value": "3" }
             ]
           }
+        },
+        "messageTrue": {
+          "displayName": "Message (TRUE)",
+          "type": { "text": true }
+        },
+        "detailTrue": {
+          "displayName": "Detail (TRUE)",
+          "type": { "text": true }
+        },
+        "messageFalse": {
+          "displayName": "Message (FALSE)",
+          "type": { "text": true }
+        },
+        "detailFalse": {
+          "displayName": "Detail (FALSE)",
+          "type": { "text": true }
         }
       }
     },

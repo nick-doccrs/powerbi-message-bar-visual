@@ -24,7 +24,8 @@ export declare class Visual implements IVisual {
     private updateDetailExpandedState;
     private applyTextSettings;
     private applySeverity;
-    private evaluateRule;
+    private evaluateCondition;
+    private getSeverityForState;
     private clearVisual;
     private updateRemainingCount;
     private showCurrentMessage;
