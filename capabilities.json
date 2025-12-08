@@ -82,10 +82,11 @@
           "displayName": "Severity when FALSE",
           "type": {
             "enumeration": [
-              { "displayName": "Info",     "value": "0" },
-              { "displayName": "Success",  "value": "1" },
-              { "displayName": "Caution",  "value": "2" },
-              { "displayName": "Critical", "value": "3" }
+              { "displayName": "No message", "value": "none" },
+              { "displayName": "Info",       "value": "0" },
+              { "displayName": "Success",    "value": "1" },
+              { "displayName": "Caution",    "value": "2" },
+              { "displayName": "Critical",   "value": "3" }
             ]
           }
         }
@@ -133,10 +134,11 @@
           "displayName": "Severity when FALSE",
           "type": {
             "enumeration": [
-              { "displayName": "Info",     "value": "0" },
-              { "displayName": "Success",  "value": "1" },
-              { "displayName": "Caution",  "value": "2" },
-              { "displayName": "Critical", "value": "3" }
+              { "displayName": "No message", "value": "none" },
+              { "displayName": "Info",       "value": "0" },
+              { "displayName": "Success",    "value": "1" },
+              { "displayName": "Caution",    "value": "2" },
+              { "displayName": "Critical",   "value": "3" }
             ]
           }
         }
@@ -184,10 +186,11 @@
           "displayName": "Severity when FALSE",
           "type": {
             "enumeration": [
-              { "displayName": "Info",     "value": "0" },
-              { "displayName": "Success",  "value": "1" },
-              { "displayName": "Caution",  "value": "2" },
-              { "displayName": "Critical", "value": "3" }
+              { "displayName": "No message", "value": "none" },
+              { "displayName": "Info",       "value": "0" },
+              { "displayName": "Success",    "value": "1" },
+              { "displayName": "Caution",    "value": "2" },
+              { "displayName": "Critical",   "value": "3" }
             ]
           }
         }
@@ -235,10 +238,11 @@
           "displayName": "Severity when FALSE",
           "type": {
             "enumeration": [
-              { "displayName": "Info",     "value": "0" },
-              { "displayName": "Success",  "value": "1" },
-              { "displayName": "Caution",  "value": "2" },
-              { "displayName": "Critical", "value": "3" }
+              { "displayName": "No message", "value": "none" },
+              { "displayName": "Info",       "value": "0" },
+              { "displayName": "Success",    "value": "1" },
+              { "displayName": "Caution",    "value": "2" },
+              { "displayName": "Critical",   "value": "3" }
             ]
           }
         }
@@ -286,10 +290,11 @@
           "displayName": "Severity when FALSE",
           "type": {
             "enumeration": [
-              { "displayName": "Info",     "value": "0" },
-              { "displayName": "Success",  "value": "1" },
-              { "displayName": "Caution",  "value": "2" },
-              { "displayName": "Critical", "value": "3" }
+              { "displayName": "No message", "value": "none" },
+              { "displayName": "Info",       "value": "0" },
+              { "displayName": "Success",    "value": "1" },
+              { "displayName": "Caution",    "value": "2" },
+              { "displayName": "Critical",   "value": "3" }
             ]
           }
         }
@@ -337,10 +342,11 @@
           "displayName": "Severity when FALSE",
           "type": {
             "enumeration": [
-              { "displayName": "Info",     "value": "0" },
-              { "displayName": "Success",  "value": "1" },
-              { "displayName": "Caution",  "value": "2" },
-              { "displayName": "Critical", "value": "3" }
+              { "displayName": "No message", "value": "none" },
+              { "displayName": "Info",       "value": "0" },
+              { "displayName": "Success",    "value": "1" },
+              { "displayName": "Caution",    "value": "2" },
+              { "displayName": "Critical",   "value": "3" }
             ]
           }
         }
@@ -388,10 +394,11 @@
           "displayName": "Severity when FALSE",
           "type": {
             "enumeration": [
-              { "displayName": "Info",     "value": "0" },
-              { "displayName": "Success",  "value": "1" },
-              { "displayName": "Caution",  "value": "2" },
-              { "displayName": "Critical", "value": "3" }
+              { "displayName": "No message", "value": "none" },
+              { "displayName": "Info",       "value": "0" },
+              { "displayName": "Success",    "value": "1" },
+              { "displayName": "Caution",    "value": "2" },
+              { "displayName": "Critical",   "value": "3" }
             ]
           }
         }
@@ -439,10 +446,11 @@
           "displayName": "Severity when FALSE",
           "type": {
             "enumeration": [
-              { "displayName": "Info",     "value": "0" },
-              { "displayName": "Success",  "value": "1" },
-              { "displayName": "Caution",  "value": "2" },
-              { "displayName": "Critical", "value": "3" }
+              { "displayName": "No message", "value": "none" },
+              { "displayName": "Info",       "value": "0" },
+              { "displayName": "Success",    "value": "1" },
+              { "displayName": "Caution",    "value": "2" },
+              { "displayName": "Critical",   "value": "3" }
             ]
           }
         }

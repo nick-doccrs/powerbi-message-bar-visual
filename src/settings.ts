@@ -29,7 +29,7 @@ export class RuleCard extends formattingSettings.SimpleCard {
       name: "scenario",
       displayName: "Scenario",
       value: "",
-      placeholder: "Enter scenario name"     // ← REQUIRED
+      placeholder: "Enter scenario name"
     });
 
     this.operator = new formattingSettings.AutoDropdown({
@@ -59,7 +59,7 @@ export class RuleCard extends formattingSettings.SimpleCard {
     this.falseState = new formattingSettings.AutoDropdown({
       name: "falseState",
       displayName: "Severity when FALSE",
-      value: "2"
+      value: "none"   // default: no message when FALSE
     });
 
     this.slices = [
@@ -73,7 +73,6 @@ export class RuleCard extends formattingSettings.SimpleCard {
     ];
   }
 }
-
 
 export class VisualSettings extends formattingSettings.Model {
   rule1 = new RuleCard("rule1", "Rule 1");

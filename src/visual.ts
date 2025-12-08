@@ -85,7 +85,7 @@ export class Visual implements IVisual {
         const remaining = document.createElement("div");
         remaining.className = "alert-remaining";
         remaining.textContent = "";
-        
+
         const dismiss = document.createElement("img");
         dismiss.className = "alert-dismiss";
         dismiss.src = DismissIcon;
@@ -174,6 +174,7 @@ export class Visual implements IVisual {
         this.alertRootElement.style.visibility = "visible";
     }
 
+    // TRUE/FALSE handling with "No message" support on falseState
     private evaluateRule(rule: RuleCard, triggerValue: any, compareToValue: any): number | null {
         if (!rule || rule.enabled.value !== true) {
             return null;
@@ -227,14 +228,27 @@ export class Visual implements IVisual {
             }
         }
 
-        if (!ruleMatch) {
-            return null;
+        const trueStateValue  = rule.trueState.value as string;   // "0".."3"
+        const falseStateValue = rule.falseState.value as string;  // "none" or "0".."3"
+
+        const toSeverity = (val: string, fallback: number): number | null => {
+            if (val === "none") {
+                return null; // explicitly: no message
+            }
+            const n = Number(val);
+            if ([0, 1, 2, 3].includes(n)) {
+                return n;
+            }
+            return fallback;
+        };
+
+        if (ruleMatch) {
+            // TRUE path (you *could* later allow "none" here too if desired)
+            return toSeverity(trueStateValue, 1);   // default fallback: Success
+        } else {
+            // FALSE path – honour "No message"
+            return toSeverity(falseStateValue, 0);  // default fallback: Info
         }
-
-        const trueState = Number(rule.trueState.value);
-        const trueStateSafe = [0, 1, 2, 3].includes(trueState) ? trueState : 1;
-
-        return trueStateSafe;
     }
 
     private clearVisual(): void {
@@ -377,7 +391,7 @@ export class Visual implements IVisual {
             const compareToValue = idxCompareTo >= 0 ? matchedRow[idxCompareTo] : null;
 
             const severity = this.evaluateRule(rule, triggerValue, compareToValue);
-            if (severity == null) continue;
+            if (severity == null) continue;  // rule produces no message
 
             const msgText =
                 idxMessage >= 0 && matchedRow[idxMessage] != null
