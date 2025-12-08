@@ -12,7 +12,10 @@ export declare class Visual implements IVisual {
     private messageElement;
     private toggleElement;
     private detailElement;
+    private dismissElement;
     private expanded;
+    private messages;
+    private currentMessageIndex;
     private settingsService;
     private settings;
     constructor(options: VisualConstructorOptions);
@@ -20,6 +23,9 @@ export declare class Visual implements IVisual {
     private applyTextSettings;
     private applySeverity;
     private evaluateRule;
+    private clearVisual;
+    private showCurrentMessage;
+    private showNextMessage;
     update(options: VisualUpdateOptions): void;
     getFormattingModel(): FormattingModel;
 }

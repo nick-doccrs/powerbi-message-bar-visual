@@ -10,10 +10,18 @@ import DataView = powerbi.DataView;
 import FormattingModel = powerbi.visuals.FormattingModel;
 
 import { VisualSettingsService, VisualSettings, RuleCard } from "./settings";
+
 import ErrorIcon from "./assets/Error.svg";
 import InfoIcon from "./assets/Info.svg";
 import SuccessIcon from "./assets/Success.svg";
 import WarningIcon from "./assets/Warning.svg";
+import DismissIcon from "./assets/Dismiss.svg";
+
+interface QueuedMessage {
+    message: string;
+    detail: string;
+    severity: number; // 0..3
+}
 
 export class Visual implements IVisual {
     private rootElement: HTMLElement;
@@ -24,8 +32,12 @@ export class Visual implements IVisual {
     private messageElement: HTMLElement;
     private toggleElement: HTMLElement;
     private detailElement: HTMLElement;
+    private dismissElement: HTMLImageElement;
 
     private expanded: boolean = false;
+
+    private messages: QueuedMessage[] = [];
+    private currentMessageIndex: number = 0;
 
     private settingsService: VisualSettingsService;
     private settings: VisualSettings;
@@ -36,6 +48,7 @@ export class Visual implements IVisual {
         this.settingsService = new VisualSettingsService();
         this.settings = new VisualSettings();
 
+        // ----- Build DOM -----
         const container = document.createElement("div");
         container.className = "visual";
 
@@ -57,9 +70,15 @@ export class Visual implements IVisual {
         toggle.className = "alert-toggle";
         toggle.textContent = "Details";
 
+        const dismiss = document.createElement("img");
+        dismiss.className = "alert-dismiss";
+        dismiss.src = DismissIcon;
+        dismiss.alt = "Dismiss";
+
         header.appendChild(icon);
         header.appendChild(message);
         header.appendChild(toggle);
+        header.appendChild(dismiss);
 
         const detail = document.createElement("div");
         detail.className = "alert-detail";
@@ -76,11 +95,18 @@ export class Visual implements IVisual {
         this.messageElement = message;
         this.toggleElement = toggle;
         this.detailElement = detail;
+        this.dismissElement = dismiss;
 
+        // Interaction
         this.toggleElement.onclick = (e) => {
             e.stopPropagation();
             this.expanded = !this.expanded;
             this.updateDetailExpandedState();
+        };
+
+        this.dismissElement.onclick = (e) => {
+            e.stopPropagation();
+            this.showNextMessage();
         };
 
         this.applySeverity(0);
@@ -105,10 +131,10 @@ export class Visual implements IVisual {
 
     private applySeverity(sev: number): void {
         const styles = [
-            { fill: "#F5F5F5", border: "#D1D1D1", icon: InfoIcon },
-            { fill: "#F1FAF1", border: "#A2D8A2", icon: SuccessIcon },
-            { fill: "#FFF9F5", border: "#FBCEB6", icon: WarningIcon },
-            { fill: "#FDF3F4", border: "#ECABB3", icon: ErrorIcon }
+            { fill: "#F5F5F5", border: "#D1D1D1", icon: InfoIcon },    // 0 Info
+            { fill: "#F1FAF1", border: "#A2D8A2", icon: SuccessIcon }, // 1 Success
+            { fill: "#FFF9F5", border: "#FBCEB6", icon: WarningIcon }, // 2 Caution
+            { fill: "#FDF3F4", border: "#ECABB3", icon: ErrorIcon }    // 3 Critical
         ];
 
         const idx = Math.max(0, Math.min(3, sev));
@@ -120,15 +146,19 @@ export class Visual implements IVisual {
         this.alertRootElement.style.color = "#111111";
 
         this.iconElement.src = s.icon;
+        this.alertRootElement.style.visibility = "visible";
     }
 
+    // Evaluate a single rule against a Value / CompareTo pair.
+    // Returns severity (0..3) when the rule condition is TRUE.
+    // Returns null when the rule does not trigger (no message).
     private evaluateRule(rule: RuleCard, triggerValue: any, compareToValue: any): number | null {
         if (!rule || rule.enabled.value !== true) {
             return null;
         }
 
-        const op = rule.operator.value as string;
-        const compareSource = rule.compareSource.value as string;
+        const op = rule.operator.value as string;               // "eq" | "neq" | "gt" | "lt"
+        const compareSource = rule.compareSource.value as string; // "field" | "fixed"
 
         let compareTarget: any = null;
         if (compareSource === "field") {
@@ -147,38 +177,90 @@ export class Visual implements IVisual {
             compareTarget !== undefined &&
             compareTarget !== "";
 
+        if (!hasTrigger || !hasCompare) {
+            return null;
+        }
+
         let ruleMatch = false;
 
-        if (hasTrigger && hasCompare) {
-            const valNum = Number(triggerValue);
-            const cmpNum = Number(compareTarget);
-            const bothNumeric = !isNaN(valNum) && !isNaN(cmpNum);
+        const valNum = Number(triggerValue);
+        const cmpNum = Number(compareTarget);
+        const bothNumeric = !isNaN(valNum) && !isNaN(cmpNum);
 
-            if (bothNumeric) {
-                switch (op) {
-                    case "eq":  ruleMatch = valNum === cmpNum; break;
-                    case "neq": ruleMatch = valNum !== cmpNum; break;
-                    case "gt":  ruleMatch = valNum >  cmpNum;  break;
-                    case "lt":  ruleMatch = valNum <  cmpNum;  break;
-                }
-            } else {
-                const vs = String(triggerValue ?? "");
-                const cs = String(compareTarget ?? "");
-                switch (op) {
-                    case "eq":  ruleMatch = vs === cs; break;
-                    case "neq": ruleMatch = vs !== cs; break;
-                    case "gt":  ruleMatch = vs >  cs;  break;
-                    case "lt":  ruleMatch = vs <  cs;  break;
-                }
+        if (bothNumeric) {
+            switch (op) {
+                case "eq":  ruleMatch = valNum === cmpNum; break;
+                case "neq": ruleMatch = valNum !== cmpNum; break;
+                case "gt":  ruleMatch = valNum >  cmpNum;  break;
+                case "lt":  ruleMatch = valNum <  cmpNum;  break;
+            }
+        } else {
+            const vs = String(triggerValue ?? "");
+            const cs = String(compareTarget ?? "");
+            switch (op) {
+                case "eq":  ruleMatch = vs === cs; break;
+                case "neq": ruleMatch = vs !== cs; break;
+                case "gt":  ruleMatch = vs >  cs;  break;
+                case "lt":  ruleMatch = vs <  cs;  break;
             }
         }
 
-        const trueState  = Number(rule.trueState.value);
-        const falseState = Number(rule.falseState.value);
-        const trueStateSafe  = [0, 1, 2, 3].includes(trueState)  ? trueState  : 1;
-        const falseStateSafe = [0, 1, 2, 3].includes(falseState) ? falseState : 2;
+        if (!ruleMatch) {
+            return null;
+        }
 
-        return ruleMatch ? trueStateSafe : falseStateSafe;
+        const trueState = Number(rule.trueState.value);
+        const trueStateSafe = [0, 1, 2, 3].includes(trueState) ? trueState : 1;
+
+        return trueStateSafe;
+    }
+
+    // Completely blank / hide the visual
+    private clearVisual(): void {
+        this.messageElement.textContent = "";
+        this.detailElement.textContent = "";
+        this.iconElement.src = "";
+        this.alertRootElement.style.backgroundColor = "transparent";
+        this.alertRootElement.style.border = "none";
+        this.alertRootElement.style.color = "transparent";
+        this.alertRootElement.style.visibility = "hidden";
+        this.expanded = false;
+        this.updateDetailExpandedState();
+    }
+
+    private showCurrentMessage(): void {
+        if (!this.messages || this.messages.length === 0) {
+            this.clearVisual();
+            return;
+        }
+
+        const msg = this.messages[this.currentMessageIndex];
+        this.messageElement.textContent = msg.message;
+        this.detailElement.textContent = msg.detail;
+        this.applySeverity(msg.severity);
+    }
+
+    // Remove the current message; if none left, blank the visual.
+    private showNextMessage(): void {
+        if (!this.messages || this.messages.length === 0) {
+            this.clearVisual();
+            return;
+        }
+
+        // Remove current message from the queue
+        this.messages.splice(this.currentMessageIndex, 1);
+
+        if (this.messages.length === 0) {
+            this.currentMessageIndex = 0;
+            this.clearVisual();
+            return;
+        }
+
+        if (this.currentMessageIndex >= this.messages.length) {
+            this.currentMessageIndex = 0;
+        }
+
+        this.showCurrentMessage();
     }
 
     public update(options: VisualUpdateOptions): void {
@@ -189,14 +271,14 @@ export class Visual implements IVisual {
         }
 
         this.applyTextSettings();
+        this.messages = [];
+        this.currentMessageIndex = 0;
+        this.expanded = false;
+        this.updateDetailExpandedState();
 
         const table = dataView?.table;
         if (!table || !table.columns || !table.rows || table.rows.length === 0) {
-            this.messageElement.textContent = "Message (bind a table)";
-            this.detailElement.textContent = "";
-            this.applySeverity(0);
-            this.expanded = false;
-            this.updateDetailExpandedState();
+            this.clearVisual();
             return;
         }
 
@@ -210,33 +292,11 @@ export class Visual implements IVisual {
             return -1;
         };
 
-        const idxScenario = getIndexByRole("scenario");
+        const idxScenario  = getIndexByRole("scenario");
         const idxMessage   = getIndexByRole("message");
         const idxDetail    = getIndexByRole("detail");
-        const idxSeverity  = getIndexByRole("severity");
         const idxValue     = getIndexByRole("value");
         const idxCompareTo = getIndexByRole("compareTo");
-
-        let messageText = "Message (bind a table)";
-        let detailText = "";
-        let severityValue: number | null = null;
-
-        // Fallback to first row if nothing matches any rule
-        if (rows.length > 0) {
-            const first = rows[0];
-            if (idxMessage >= 0 && first[idxMessage] != null) {
-                messageText = String(first[idxMessage]);
-            }
-            if (idxDetail >= 0 && first[idxDetail] != null) {
-                detailText = String(first[idxDetail]);
-            }
-            if (idxSeverity >= 0 && first[idxSeverity] != null && first[idxSeverity] !== "") {
-                const sevNum = Number(first[idxSeverity]);
-                if (!Number.isNaN(sevNum)) {
-                    severityValue = sevNum;
-                }
-            }
-        }
 
         const rules: RuleCard[] = [
             this.settings.rule1,
@@ -249,9 +309,10 @@ export class Visual implements IVisual {
             this.settings.rule8
         ];
 
-        // Evaluate rules in order; first matching rule wins
+        // Build message queue: one message per rule that triggers
         for (const rule of rules) {
             if (!rule.enabled.value) continue;
+
             const scenarioName = (rule.scenario.value || "").toString().trim();
             if (!scenarioName || idxScenario < 0) continue;
 
@@ -267,32 +328,36 @@ export class Visual implements IVisual {
 
             if (!matchedRow) continue;
 
-            const triggerValue = idxValue >= 0 ? matchedRow[idxValue] : null;
+            const triggerValue   = idxValue     >= 0 ? matchedRow[idxValue]     : null;
             const compareToValue = idxCompareTo >= 0 ? matchedRow[idxCompareTo] : null;
 
-            const sev = this.evaluateRule(rule, triggerValue, compareToValue);
-            if (sev !== null) {
-                severityValue = sev;
+            const severity = this.evaluateRule(rule, triggerValue, compareToValue);
+            if (severity == null) continue; // rule didn't trigger → no message
 
-                if (idxMessage >= 0 && matchedRow[idxMessage] != null) {
-                    messageText = String(matchedRow[idxMessage]);
-                }
-                if (idxDetail >= 0 && matchedRow[idxDetail] != null) {
-                    detailText = String(matchedRow[idxDetail]);
-                }
-                break;
-            }
+            const msgText =
+                idxMessage >= 0 && matchedRow[idxMessage] != null
+                    ? String(matchedRow[idxMessage])
+                    : "Message";
+
+            const detailText =
+                idxDetail >= 0 && matchedRow[idxDetail] != null
+                    ? String(matchedRow[idxDetail])
+                    : "";
+
+            this.messages.push({
+                message: msgText,
+                detail: detailText,
+                severity: severity
+            });
         }
 
-        if (severityValue == null) {
-            severityValue = 0;
+        // If no triggered messages, blank the visual
+        if (this.messages.length === 0) {
+            this.clearVisual();
+            return;
         }
 
-        this.messageElement.textContent = messageText;
-        this.detailElement.textContent  = detailText;
-
-        this.applySeverity(severityValue);
-        this.updateDetailExpandedState();
+        this.showCurrentMessage();
     }
 
     public getFormattingModel(): FormattingModel {
