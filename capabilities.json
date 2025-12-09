@@ -3,11 +3,9 @@
   "suppressDefaultTitle": true,
 
   "dataRoles": [
-    { "name": "message",   "kind": "Measure", "displayName": "Message" },
-    { "name": "detail",    "kind": "Measure", "displayName": "Detail" },
-    { "name": "severity",  "kind": "Measure", "displayName": "Severity (optional)" },
-    { "name": "value",     "kind": "Measure", "displayName": "Value to check (optional)" },
-    { "name": "compareTo", "kind": "Measure", "displayName": "Compare to (optional)" }
+    { "name": "scenario", "kind": "Grouping", "displayName": "Scenario" },
+    { "name": "value",     "kind": "Measure",  "displayName": "Value" },
+    { "name": "compareTo", "kind": "Measure",  "displayName": "Compare to" }
   ],
 
   "dataViewMappings": [
@@ -15,14 +13,12 @@
       "table": {
         "rows": {
           "select": [
-            { "for": { "in": "message" } },
-            { "for": { "in": "detail" } },
-            { "for": { "in": "severity" } },
+            { "for": { "in": "scenario" } },
             { "for": { "in": "value" } },
             { "for": { "in": "compareTo" } }
           ],
           "dataReductionAlgorithm": {
-            "top": { "count": 1 }
+            "top": { "count": 100 }
           }
         }
       }
@@ -30,12 +26,16 @@
   ],
 
   "objects": {
-    "rules": {
-      "displayName": "Rules",
+    "rule1": {
+      "displayName": "Rule 1",
       "properties": {
         "enabled": {
-          "displayName": "Enable rules",
+          "displayName": "Enable rule",
           "type": { "bool": true }
+        },
+        "scenario": {
+          "displayName": "Scenario",
+          "type": { "text": true }
         },
         "operator": {
           "displayName": "Operator",
@@ -52,8 +52,8 @@
           "displayName": "Compare source",
           "type": {
             "enumeration": [
-              { "displayName": "Field", "value": "field" },
-              { "displayName": "Fixed", "value": "fixed" }
+              { "displayName": "Field (CompareTo)", "value": "field" },
+              { "displayName": "Fixed value",       "value": "fixed" }
             ]
           }
         },
@@ -76,12 +76,505 @@
           "displayName": "Severity when FALSE",
           "type": {
             "enumeration": [
+              { "displayName": "No message", "value": "none" },
+              { "displayName": "Info",       "value": "0" },
+              { "displayName": "Success",    "value": "1" },
+              { "displayName": "Caution",    "value": "2" },
+              { "displayName": "Critical",   "value": "3" }
+            ]
+          }
+        },
+        "messageTrue": {
+          "displayName": "Message (TRUE)",
+          "type": { "text": true }
+        },
+        "detailTrue": {
+          "displayName": "Detail (TRUE)",
+          "type": { "text": true }
+        },
+        "messageFalse": {
+          "displayName": "Message (FALSE)",
+          "type": { "text": true }
+        },
+        "detailFalse": {
+          "displayName": "Detail (FALSE)",
+          "type": { "text": true }
+        }
+      }
+    },
+
+    "rule2": {
+      "displayName": "Rule 2",
+      "properties": {
+        "enabled": { "displayName": "Enable rule", "type": { "bool": true } },
+        "scenario": { "displayName": "Scenario", "type": { "text": true } },
+        "operator": {
+          "displayName": "Operator",
+          "type": {
+            "enumeration": [
+              { "displayName": "Equals (=)",       "value": "eq" },
+              { "displayName": "Not equal (≠)",    "value": "neq" },
+              { "displayName": "Greater than (>)", "value": "gt" },
+              { "displayName": "Less than (<)",    "value": "lt" }
+            ]
+          }
+        },
+        "compareSource": {
+          "displayName": "Compare source",
+          "type": {
+            "enumeration": [
+              { "displayName": "Field (CompareTo)", "value": "field" },
+              { "displayName": "Fixed value",       "value": "fixed" }
+            ]
+          }
+        },
+        "fixedValue": { "displayName": "Fixed value", "type": { "numeric": true } },
+        "trueState": {
+          "displayName": "Severity when TRUE",
+          "type": {
+            "enumeration": [
               { "displayName": "Info",     "value": "0" },
               { "displayName": "Success",  "value": "1" },
               { "displayName": "Caution",  "value": "2" },
               { "displayName": "Critical", "value": "3" }
             ]
           }
+        },
+        "falseState": {
+          "displayName": "Severity when FALSE",
+          "type": {
+            "enumeration": [
+              { "displayName": "No message", "value": "none" },
+              { "displayName": "Info",       "value": "0" },
+              { "displayName": "Success",    "value": "1" },
+              { "displayName": "Caution",    "value": "2" },
+              { "displayName": "Critical",   "value": "3" }
+            ]
+          }
+        },
+        "messageTrue": {
+          "displayName": "Message (TRUE)",
+          "type": { "text": true }
+        },
+        "detailTrue": {
+          "displayName": "Detail (TRUE)",
+          "type": { "text": true }
+        },
+        "messageFalse": {
+          "displayName": "Message (FALSE)",
+          "type": { "text": true }
+        },
+        "detailFalse": {
+          "displayName": "Detail (FALSE)",
+          "type": { "text": true }
+        }
+      }
+    },
+
+    "rule3": {
+      "displayName": "Rule 3",
+      "properties": {
+        "enabled": { "displayName": "Enable rule", "type": { "bool": true } },
+        "scenario": { "displayName": "Scenario", "type": { "text": true } },
+        "operator": {
+          "displayName": "Operator",
+          "type": {
+            "enumeration": [
+              { "displayName": "Equals (=)",       "value": "eq" },
+              { "displayName": "Not equal (≠)",    "value": "neq" },
+              { "displayName": "Greater than (>)", "value": "gt" },
+              { "displayName": "Less than (<)",    "value": "lt" }
+            ]
+          }
+        },
+        "compareSource": {
+          "displayName": "Compare source",
+          "type": {
+            "enumeration": [
+              { "displayName": "Field (CompareTo)", "value": "field" },
+              { "displayName": "Fixed value",       "value": "fixed" }
+            ]
+          }
+        },
+        "fixedValue": { "displayName": "Fixed value", "type": { "numeric": true } },
+        "trueState": {
+          "displayName": "Severity when TRUE",
+          "type": {
+            "enumeration": [
+              { "displayName": "Info",     "value": "0" },
+              { "displayName": "Success",  "value": "1" },
+              { "displayName": "Caution",  "value": "2" },
+              { "displayName": "Critical", "value": "3" }
+            ]
+          }
+        },
+        "falseState": {
+          "displayName": "Severity when FALSE",
+          "type": {
+            "enumeration": [
+              { "displayName": "No message", "value": "none" },
+              { "displayName": "Info",       "value": "0" },
+              { "displayName": "Success",    "value": "1" },
+              { "displayName": "Caution",    "value": "2" },
+              { "displayName": "Critical",   "value": "3" }
+            ]
+          }
+        },
+        "messageTrue": {
+          "displayName": "Message (TRUE)",
+          "type": { "text": true }
+        },
+        "detailTrue": {
+          "displayName": "Detail (TRUE)",
+          "type": { "text": true }
+        },
+        "messageFalse": {
+          "displayName": "Message (FALSE)",
+          "type": { "text": true }
+        },
+        "detailFalse": {
+          "displayName": "Detail (FALSE)",
+          "type": { "text": true }
+        }
+      }
+    },
+
+    "rule4": {
+      "displayName": "Rule 4",
+      "properties": {
+        "enabled": { "displayName": "Enable rule", "type": { "bool": true } },
+        "scenario": { "displayName": "Scenario", "type": { "text": true } },
+        "operator": {
+          "displayName": "Operator",
+          "type": {
+            "enumeration": [
+              { "displayName": "Equals (=)",       "value": "eq" },
+              { "displayName": "Not equal (≠)",    "value": "neq" },
+              { "displayName": "Greater than (>)", "value": "gt" },
+              { "displayName": "Less than (<)",    "value": "lt" }
+            ]
+          }
+        },
+        "compareSource": {
+          "displayName": "Compare source",
+          "type": {
+            "enumeration": [
+              { "displayName": "Field (CompareTo)", "value": "field" },
+              { "displayName": "Fixed value",       "value": "fixed" }
+            ]
+          }
+        },
+        "fixedValue": { "displayName": "Fixed value", "type": { "numeric": true } },
+        "trueState": {
+          "displayName": "Severity when TRUE",
+          "type": {
+            "enumeration": [
+              { "displayName": "Info",     "value": "0" },
+              { "displayName": "Success",  "value": "1" },
+              { "displayName": "Caution",  "value": "2" },
+              { "displayName": "Critical", "value": "3" }
+            ]
+          }
+        },
+        "falseState": {
+          "displayName": "Severity when FALSE",
+          "type": {
+            "enumeration": [
+              { "displayName": "No message", "value": "none" },
+              { "displayName": "Info",       "value": "0" },
+              { "displayName": "Success",    "value": "1" },
+              { "displayName": "Caution",    "value": "2" },
+              { "displayName": "Critical",   "value": "3" }
+            ]
+          }
+        },
+        "messageTrue": {
+          "displayName": "Message (TRUE)",
+          "type": { "text": true }
+        },
+        "detailTrue": {
+          "displayName": "Detail (TRUE)",
+          "type": { "text": true }
+        },
+        "messageFalse": {
+          "displayName": "Message (FALSE)",
+          "type": { "text": true }
+        },
+        "detailFalse": {
+          "displayName": "Detail (FALSE)",
+          "type": { "text": true }
+        }
+      }
+    },
+
+    "rule5": {
+      "displayName": "Rule 5",
+      "properties": {
+        "enabled": { "displayName": "Enable rule", "type": { "bool": true } },
+        "scenario": { "displayName": "Scenario", "type": { "text": true } },
+        "operator": {
+          "displayName": "Operator",
+          "type": {
+            "enumeration": [
+              { "displayName": "Equals (=)",       "value": "eq" },
+              { "displayName": "Not equal (≠)",    "value": "neq" },
+              { "displayName": "Greater than (>)", "value": "gt" },
+              { "displayName": "Less than (<)",    "value": "lt" }
+            ]
+          }
+        },
+        "compareSource": {
+          "displayName": "Compare source",
+          "type": {
+            "enumeration": [
+              { "displayName": "Field (CompareTo)", "value": "field" },
+              { "displayName": "Fixed value",       "value": "fixed" }
+            ]
+          }
+        },
+        "fixedValue": { "displayName": "Fixed value", "type": { "numeric": true } },
+        "trueState": {
+          "displayName": "Severity when TRUE",
+          "type": {
+            "enumeration": [
+              { "displayName": "Info",     "value": "0" },
+              { "displayName": "Success",  "value": "1" },
+              { "displayName": "Caution",  "value": "2" },
+              { "displayName": "Critical", "value": "3" }
+            ]
+          }
+        },
+        "falseState": {
+          "displayName": "Severity when FALSE",
+          "type": {
+            "enumeration": [
+              { "displayName": "No message", "value": "none" },
+              { "displayName": "Info",       "value": "0" },
+              { "displayName": "Success",    "value": "1" },
+              { "displayName": "Caution",    "value": "2" },
+              { "displayName": "Critical",   "value": "3" }
+            ]
+          }
+        },
+        "messageTrue": {
+          "displayName": "Message (TRUE)",
+          "type": { "text": true }
+        },
+        "detailTrue": {
+          "displayName": "Detail (TRUE)",
+          "type": { "text": true }
+        },
+        "messageFalse": {
+          "displayName": "Message (FALSE)",
+          "type": { "text": true }
+        },
+        "detailFalse": {
+          "displayName": "Detail (FALSE)",
+          "type": { "text": true }
+        }
+      }
+    },
+
+    "rule6": {
+      "displayName": "Rule 6",
+      "properties": {
+        "enabled": { "displayName": "Enable rule", "type": { "bool": true } },
+        "scenario": { "displayName": "Scenario", "type": { "text": true } },
+        "operator": {
+          "displayName": "Operator",
+          "type": {
+            "enumeration": [
+              { "displayName": "Equals (=)",       "value": "eq" },
+              { "displayName": "Not equal (≠)",    "value": "neq" },
+              { "displayName": "Greater than (>)", "value": "gt" },
+              { "displayName": "Less than (<)",    "value": "lt" }
+            ]
+          }
+        },
+        "compareSource": {
+          "displayName": "Compare source",
+          "type": {
+            "enumeration": [
+              { "displayName": "Field (CompareTo)", "value": "field" },
+              { "displayName": "Fixed value",       "value": "fixed" }
+            ]
+          }
+        },
+        "fixedValue": { "displayName": "Fixed value", "type": { "numeric": true } },
+        "trueState": {
+          "displayName": "Severity when TRUE",
+          "type": {
+            "enumeration": [
+              { "displayName": "Info",     "value": "0" },
+              { "displayName": "Success",  "value": "1" },
+              { "displayName": "Caution",  "value": "2" },
+              { "displayName": "Critical", "value": "3" }
+            ]
+          }
+        },
+        "falseState": {
+          "displayName": "Severity when FALSE",
+          "type": {
+            "enumeration": [
+              { "displayName": "No message", "value": "none" },
+              { "displayName": "Info",       "value": "0" },
+              { "displayName": "Success",    "value": "1" },
+              { "displayName": "Caution",    "value": "2" },
+              { "displayName": "Critical",   "value": "3" }
+            ]
+          }
+        },
+        "messageTrue": {
+          "displayName": "Message (TRUE)",
+          "type": { "text": true }
+        },
+        "detailTrue": {
+          "displayName": "Detail (TRUE)",
+          "type": { "text": true }
+        },
+        "messageFalse": {
+          "displayName": "Message (FALSE)",
+          "type": { "text": true }
+        },
+        "detailFalse": {
+          "displayName": "Detail (FALSE)",
+          "type": { "text": true }
+        }
+      }
+    },
+
+    "rule7": {
+      "displayName": "Rule 7",
+      "properties": {
+        "enabled": { "displayName": "Enable rule", "type": { "bool": true } },
+        "scenario": { "displayName": "Scenario", "type": { "text": true } },
+        "operator": {
+          "displayName": "Operator",
+          "type": {
+            "enumeration": [
+              { "displayName": "Equals (=)",       "value": "eq" },
+              { "displayName": "Not equal (≠)",    "value": "neq" },
+              { "displayName": "Greater than (>)", "value": "gt" },
+              { "displayName": "Less than (<)",    "value": "lt" }
+            ]
+          }
+        },
+        "compareSource": {
+          "displayName": "Compare source",
+          "type": {
+            "enumeration": [
+              { "displayName": "Field (CompareTo)", "value": "field" },
+              { "displayName": "Fixed value",       "value": "fixed" }
+            ]
+          }
+        },
+        "fixedValue": { "displayName": "Fixed value", "type": { "numeric": true } },
+        "trueState": {
+          "displayName": "Severity when TRUE",
+          "type": {
+            "enumeration": [
+              { "displayName": "Info",     "value": "0" },
+              { "displayName": "Success",  "value": "1" },
+              { "displayName": "Caution",  "value": "2" },
+              { "displayName": "Critical", "value": "3" }
+            ]
+          }
+        },
+        "falseState": {
+          "displayName": "Severity when FALSE",
+          "type": {
+            "enumeration": [
+              { "displayName": "No message", "value": "none" },
+              { "displayName": "Info",       "value": "0" },
+              { "displayName": "Success",    "value": "1" },
+              { "displayName": "Caution",    "value": "2" },
+              { "displayName": "Critical",   "value": "3" }
+            ]
+          }
+        },
+        "messageTrue": {
+          "displayName": "Message (TRUE)",
+          "type": { "text": true }
+        },
+        "detailTrue": {
+          "displayName": "Detail (TRUE)",
+          "type": { "text": true }
+        },
+        "messageFalse": {
+          "displayName": "Message (FALSE)",
+          "type": { "text": true }
+        },
+        "detailFalse": {
+          "displayName": "Detail (FALSE)",
+          "type": { "text": true }
+        }
+      }
+    },
+
+    "rule8": {
+      "displayName": "Rule 8",
+      "properties": {
+        "enabled": { "displayName": "Enable rule", "type": { "bool": true } },
+        "scenario": { "displayName": "Scenario", "type": { "text": true } },
+        "operator": {
+          "displayName": "Operator",
+          "type": {
+            "enumeration": [
+              { "displayName": "Equals (=)",       "value": "eq" },
+              { "displayName": "Not equal (≠)",    "value": "neq" },
+              { "displayName": "Greater than (>)", "value": "gt" },
+              { "displayName": "Less than (<)",    "value": "lt" }
+            ]
+          }
+        },
+        "compareSource": {
+          "displayName": "Compare source",
+          "type": {
+            "enumeration": [
+              { "displayName": "Field (CompareTo)", "value": "field" },
+              { "displayName": "Fixed value",       "value": "fixed" }
+            ]
+          }
+        },
+        "fixedValue": { "displayName": "Fixed value", "type": { "numeric": true } },
+        "trueState": {
+          "displayName": "Severity when TRUE",
+          "type": {
+            "enumeration": [
+              { "displayName": "Info",     "value": "0" },
+              { "displayName": "Success",  "value": "1" },
+              { "displayName": "Caution",  "value": "2" },
+              { "displayName": "Critical", "value": "3" }
+            ]
+          }
+        },
+        "falseState": {
+          "displayName": "Severity when FALSE",
+          "type": {
+            "enumeration": [
+              { "displayName": "No message", "value": "none" },
+              { "displayName": "Info",       "value": "0" },
+              { "displayName": "Success",    "value": "1" },
+              { "displayName": "Caution",    "value": "2" },
+              { "displayName": "Critical",   "value": "3" }
+            ]
+          }
+        },
+        "messageTrue": {
+          "displayName": "Message (TRUE)",
+          "type": { "text": true }
+        },
+        "detailTrue": {
+          "displayName": "Detail (TRUE)",
+          "type": { "text": true }
+        },
+        "messageFalse": {
+          "displayName": "Message (FALSE)",
+          "type": { "text": true }
+        },
+        "detailFalse": {
+          "displayName": "Detail (FALSE)",
+          "type": { "text": true }
         }
       }
     },
@@ -108,11 +601,9 @@
               { "displayName": "DIN",                 "value": "DIN" },
               { "displayName": "Georgia",             "value": "Georgia" },
               { "displayName": "Lucida Sans Unicode", "value": "Lucida Sans Unicode" },
-
               { "displayName": "Segoe (Bold)",        "value": "Segoe UI" },
               { "displayName": "Segoe UI",            "value": "Segoe UI" },
               { "displayName": "Segoe UI Light",      "value": "Segoe UI Light" },
-
               { "displayName": "Symbol",              "value": "Symbol" },
               { "displayName": "Tahoma",              "value": "Tahoma" },
               { "displayName": "Times New Roman",     "value": "Times New Roman" },
@@ -121,7 +612,6 @@
             ]
           }
         },
-
         "messageFontSize": {
           "displayName": "Message font size",
           "type": { "integer": true }

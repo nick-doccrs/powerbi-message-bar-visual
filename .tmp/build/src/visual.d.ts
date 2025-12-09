@@ -1,4 +1,4 @@
-import "./../style/visual.less";
+import "../style/visual.less";
 import powerbi from "powerbi-visuals-api";
 import IVisual = powerbi.extensibility.visual.IVisual;
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -9,16 +9,27 @@ export declare class Visual implements IVisual {
     private alertRootElement;
     private headerElement;
     private iconElement;
-    private messageElement;
+    private messageContainerElement;
+    private messageTextElement;
     private toggleElement;
+    private remainingElement;
     private detailElement;
+    private dismissElement;
     private expanded;
+    private messages;
+    private currentMessageIndex;
     private settingsService;
     private settings;
     constructor(options: VisualConstructorOptions);
     private updateDetailExpandedState;
     private applyTextSettings;
     private applySeverity;
+    private evaluateCondition;
+    private getSeverityForState;
+    private clearVisual;
+    private updateRemainingCount;
+    private showCurrentMessage;
+    private showNextMessage;
     update(options: VisualUpdateOptions): void;
     getFormattingModel(): FormattingModel;
 }
