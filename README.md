@@ -141,25 +141,10 @@ Multiple triggered rules are stacked:
 
 ---
 
-## 📁 Project Structure
-
-\`\`\`
-src/
-  visual.ts          // Core rendering, rule evaluation, UI updates
-  settings.ts        // Format pane model (rules, messages, severity)
-  assets/            // Icons and visual icon
-  style/visual.less  // Fluent UI styling
-
-capabilities.json    // Roles & format pane structure
-pbiviz.json          // Visual manifest and metadata
-dist/                // Packaged .pbiviz output
-\`\`\`
-
----
-
 ## 🛠 Development & Packaging
 
 ### Install tools
+
 
 \`\`\`bash
 npm install -g powerbi-visuals-tools
@@ -171,13 +156,17 @@ npm install -g powerbi-visuals-tools
 pbiviz start
 \`\`\`
 
-### Create distributable package (\`.pbiviz\`)
+### Create distributable package (.pbiviz)
 
 \`\`\`bash
 pbiviz package
 \`\`\`
 
-The package appears under \`/dist\`.
+The package appears under:
+
+\`\`\`
+/dist
+\`\`\`
 
 ---
 
