@@ -1,11 +1,3 @@
-// readme.ts
-// Export README content as a markdown string for use in build tooling or docs generation.
-
-export const README_MD = `# Message Bar for Power BI  
-*A rule-based alert, notification, and data quality message bar visual for Power BI.*
-
----
-
 ## 🚀 Overview
 
 **Message Bar** is a fully configurable custom visual for Power BI that displays stacked, rule-based alert messages for KPIs.  
