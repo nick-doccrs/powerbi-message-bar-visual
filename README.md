@@ -1,3 +1,8 @@
+# Message Bar for Power BI  
+*A rule-based alert, notification, and data quality message bar visual for Power BI.*
+
+---
+
 ## 🚀 Overview
 
 **Message Bar** is a fully configurable custom visual for Power BI that displays stacked, rule-based alert messages for KPIs.  
@@ -9,7 +14,7 @@ Each rule evaluates a KPI value against a target and outputs:
 - Optional detail text (expand/collapse)  
 - Severity styling (Info, Success, Caution, Critical, No message)  
 - Stacked alerts with dismiss behaviour  
-- A “**N more**” indicator showing remaining alerts  
+- A **“N more”** label showing remaining alerts  
 
 It behaves like a polished, Fluent-style UI component rather than a typical chart visual.
 
@@ -18,178 +23,180 @@ It behaves like a polished, Fluent-style UI component rather than a typical char
 ## ✨ Features
 
 - Up to **8 independent rules**
-- TRUE and FALSE messages per rule
-- Severity levels: Info / Success / Caution / Critical / No message
-- Works with **Field Parameters**, measures, fixed thresholds
-- Automatic stacking and cycling through multiple alerts
-- “N more” counter to show remaining messages
-- Inline **Details** toggle with expandable popover panel
-- Automatically hides when no rules fire
-- Case-insensitive scenario matching
-- Clean Fluent-style UI + SVG severity icons
-- Configurable typography (font, size, weight)
-
----
-
-## 📦 Installation
-
-1. Download the \`.pbiviz\` file from the **dist** folder.
-2. In Power BI Desktop:
-   - **Visualizations → … → Import a visual from a file**
-   - Select the \`.pbiviz\`
-
-The **Message Bar** icon will appear in the visual pane.
+- TRUE and FALSE outcomes per rule  
+- Severity levels: *Info*, *Success*, *Caution*, *Critical*, *No message*  
+- Works with **Field Parameters**, measures, and fixed thresholds  
+- Automatic stacking & cycling of alerts  
+- Inline **Details** toggle to expand a popover  
+- Visual disappears when no rules fire  
+- Case-insensitive scenario matching  
+- Fluent-style icons, colours, and spacing  
+- Configurable typography (fonts, size, bold)
 
 ---
 
 # 🔹 Simple Setup (Recommended) — Using Field Parameters
 
-This is the easiest and most flexible way to drive the Message Bar.
+This is the easiest and most flexible way to power the Message Bar visual.
 
-### 1. Create a Field Parameter for your KPI measures
+---
 
-Include the measures you want to monitor (e.g., Fulfilment Rate, Stocks, Freshness, Returns).
+## **1. Create a Field Parameter for your KPI measures**
+
+Include the measures you want to monitor (e.g. Fulfilment Rate, Stock Level, Data Freshness).
 
 Power BI automatically creates a **hidden table** containing:
 
-- **Order** — the position of each KPI in the parameter  
-- **Value** — the currently selected KPI value  
+- **Order** — the position of each KPI  
+- **Value** — the output of the selected KPI measure  
 
-> Since these columns are hidden, right-click your table in the **Data** pane → **Show hidden** to reveal them.
+> To reveal hidden tables:  
+> Right-click the **Data pane → Show hidden**.
 
 ---
 
-### 2. Bind the visual to the Field Parameter
+## **2. Bind the visual to the Field Parameter**
 
 In the Message Bar visual:
 
-- **Scenario** → bind to the **Order** column  
+- **Scenario** → bind to the Field Parameter’s **Order** column  
 - **Value** → bind to the Field Parameter’s **Value** column  
 
-This gives the visual everything it needs:
-
-- Scenario key  
-- KPI output  
+This gives the visual a stable scenario key and the actual KPI value.
 
 ---
 
-### 3. Optional: add target values via a second Field Parameter
+## **3. (Optional) Add CompareTo values with a second Field Parameter**
 
-If you want dynamic CompareTo values:
+If you want dynamic targets/thresholds:
 
-1. Create another Field Parameter containing your **target** or **threshold** measures.
-2. Create a relationship between both parameter tables on **Order**.
+1. Create another Field Parameter containing target measures.  
+2. Create a relationship between both Field Parameter tables using the **Order** column.  
 3. Bind **Compare to** → the second parameter’s **Value** column.
 
 ---
 
-### 4. Configure your rules
+## **4. Configure your rules in the Format pane**
 
-Format pane → **Rule 1–Rule 8**:
+Each rule supports:
 
-Set:
+- Scenario (use Order value: 0, 1, 2…)  
+- Operator (`<`, `>`, `=`, `≠`)  
+- Compare source (Field or Fixed)  
+- Message (TRUE)  
+- Detail (TRUE)  
+- Severity when TRUE  
+- Message (FALSE)  
+- Detail (FALSE)  
+- Severity when FALSE (can be “No message”)
 
-- **Scenario** → the Order value (e.g., \`0\`, \`1\`, \`2\`, \`3\`)
-- **Operator** → \`<\`, \`>\`, \`=\`, \`≠\`
-- **Compare source** → Field or Fixed value
-- **Message (TRUE)**
-- **Detail (TRUE)**
-- **Severity when TRUE**
-- **Message (FALSE)**
-- **Detail (FALSE)**
-- **Severity when FALSE** (use “No message” for silent outcomes)
-
-The Message Bar evaluates all rules and displays any matching alerts.
+The visual evaluates all rules and displays any messages that match.
 
 ---
 
-## 🧠 How It Works
+# 🧠 How It Works
 
-Each rule references one scenario (by Order number) and evaluates:
+1. The visual finds the row matching the **Scenario** value.  
+2. Loads:  
+   - `Value` (actual KPI)  
+   - `CompareTo` (from field or fixed value)  
+3. Evaluates the condition:  
+   ```
+   VALUE vs TARGET
+   ```
+4. Displays either the TRUE or FALSE message.
 
-\`\`\`
-VALUE (KPI output)
-        vs
-TARGET (from CompareTo field OR fixed value)
-\`\`\`
+If multiple rules fire, they stack and show one at a time:
 
-Then displays:
-
-| Condition | Visual output |
-|----------|----------------|
-| **TRUE** | TRUE message, TRUE detail, TRUE severity |
-| **FALSE** | FALSE message, FALSE detail, FALSE severity (or hidden if set to “No message”) |
-
-Multiple triggered rules are stacked:
-
-- First message appears  
-- A **Dismiss** button cycles through the queue  
+- First alert shows  
+- **Dismiss** cycles to the next  
 - “**N more**” shows remaining alerts  
-- When all alerts are dismissed, the bar disappears  
+- Hides when done  
 
 ---
 
-## 📚 Example Rule
+# 📚 Example Rule
 
-**Scenario:** \`0\`  
-**Operator:** \`<\`  
-**Compare Source:** Field  
-**TRUE Message:** “Fulfilment rate is below target”  
-**TRUE Severity:** Critical  
-**FALSE Message:** “Fulfilment is on target”  
-**FALSE Severity:** Success  
+| Setting | Value |
+|--------|--------|
+| Scenario | `0` |
+| Operator | `<` |
+| Compare Source | Field |
+| Message (TRUE) | Fulfilment rate is below target |
+| Severity (TRUE) | Critical |
+| Message (FALSE) | Fulfilment is on target |
+| Severity (FALSE) | Success |
 
 ---
 
-## 🛠 Development & Packaging
+# 📦 Installation (Import into Power BI)
+
+1. Download the `.pbiviz` file from the `/dist` folder.  
+2. In Power BI Desktop:  
+   - **Visualizations → … → Import a visual from a file**  
+   - Select the `.pbiviz`  
+3. The **Message Bar** icon will appear in the pane.
+
+---
+
+# 🛠 Development & Packaging
 
 ### Install tools
-
-
-\`\`\`bash
+```bash
 npm install -g powerbi-visuals-tools
-\`\`\`
+```
 
 ### Run locally
-
-\`\`\`bash
+```bash
 pbiviz start
-\`\`\`
+```
 
-### Create distributable package (.pbiviz)
-
-\`\`\`bash
+### Package the visual
+```bash
 pbiviz package
-\`\`\`
+```
 
-The package appears under:
+The generated `.pbiviz` file will appear in:
 
-\`\`\`
+```
 /dist
-\`\`\`
+```
 
 ---
 
-## 🎨 Design
+# 📁 Project Structure
 
-The visual uses:
+```
+src/
+  visual.ts          // Rendering, rule evaluation, message queue
+  settings.ts        // Format pane model (rules, messages, severity)
+  style/visual.less  // Fluent UI styling
+  assets/            // Icons for severities + dismiss
 
-- Fluent-inspired background/foreground severities  
-- SVG icons  
-- Subtle detail popover transitions  
-- Rounded corners & streamlined spacing  
-- Clean typography with optional bolding  
-
----
-
-## 📝 License
-
-MIT License (or your chosen license).
+capabilities.json    // Data roles & formatting objects
+pbiviz.json          // Visual manifest (guid, icon, metadata)
+dist/                // Packaged .pbiviz output
+```
 
 ---
 
-## 🙌 Acknowledgements
+# 🎨 Design Elements
 
-Developed as part of the **Doccrs Analytics** Power BI toolkit ecosystem.  
-Designed for real-world operations dashboards where clarity and insight matter just as much as data accuracy.
-`;
+- Fluent UI severity colours  
+- Severity-specific SVG icons  
+- Smooth expand/collapse animation for details  
+- Compact, product-style information bar layout  
+- Modern spacing and hierarchy  
+
+---
+
+# 📝 License
+
+MIT (or adjust based on your preference).
+
+---
+
+# 🙌 Acknowledgements
+
+Created as part of the **Doccrs Analytics** Power BI UX component library.  
+Built for dashboards where clarity, design quality, and actionability matter.
