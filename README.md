@@ -192,7 +192,17 @@ dist/                // Packaged .pbiviz output
 
 # 📝 License
 
-MIT (or adjust based on your preference).
+Copyright © 2025 Doccrs Analytics.
+
+Permission is granted to download and use the packaged visual (.pbiviz) 
+for personal or commercial Power BI reports.
+
+The source code is provided for learning purposes only.
+You may not copy, modify, redistribute, republish, or create derivative works
+based on the source code in this repository.
+
+Attribution must not be removed. You may not claim authorship.
+All rights reserved.
 
 ---
 
