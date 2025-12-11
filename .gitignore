@@ -30,3 +30,7 @@ Thumbs.db
 *.pem
 *.pfx
 *.key
+
+# vs settings folder
+.vscode/
+
