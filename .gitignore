@@ -1,0 +1,32 @@
+# Power BI Custom Visuals - Safe Git Ignore
+
+# Node modules  
+node_modules/
+
+# PBIVIZ temp build folders  
+.tmp/
+bin/
+obj/
+
+# Build output  
+dist/*.pbiviz
+dist/*.zip
+
+# Logs  
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build artifacts and caches  
+.cache/
+.eslintcache
+
+# OS / IDE files  
+.DS_Store
+Thumbs.db
+
+# Certificates (optional: keep out of repo)
+*.pem
+*.pfx
+*.key
