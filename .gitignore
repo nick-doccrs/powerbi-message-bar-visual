@@ -26,6 +26,7 @@ yarn-error.log*
 # OS / IDE files  
 .DS_Store
 Thumbs.db
+.webpack.stati
 
 # Certificates (optional: keep out of repo)
 *.pem
@@ -34,4 +35,5 @@ Thumbs.db
 
 # vs settings folder
 .vscode/
+webpack.statistics.dev.html
 

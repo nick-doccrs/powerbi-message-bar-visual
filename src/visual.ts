@@ -4,10 +4,15 @@ import "../style/visual.less";
 
 import powerbi from "powerbi-visuals-api";
 import IVisual = powerbi.extensibility.visual.IVisual;
+import IVisualHost = powerbi.extensibility.visual.IVisualHost;
+import ISelectionManager = powerbi.extensibility.ISelectionManager;
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
 import VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions;
 import DataView = powerbi.DataView;
 import FormattingModel = powerbi.visuals.FormattingModel;
+
+import VisualTooltipDataItem = powerbi.extensibility.VisualTooltipDataItem;
+import ITooltipService = powerbi.extensibility.ITooltipService;
 
 import { VisualSettingsService, VisualSettings, RuleCard } from "./settings";
 
@@ -21,6 +26,12 @@ interface QueuedMessage {
     message: string;
     detail: string;
     severity: number; // 0..3
+
+    // NEW: identity for cross-filter/context menu + tooltip anchoring
+    selectionId?: powerbi.visuals.ISelectionId;
+
+    // NEW: tooltip content (host renders)
+    tooltipItems?: VisualTooltipDataItem[];
 }
 
 export class Visual implements IVisual {
@@ -46,8 +57,17 @@ export class Visual implements IVisual {
     private settingsService: VisualSettingsService;
     private settings: VisualSettings;
 
+    // NEW: host services needed for certification core functionality
+    private host: IVisualHost;
+    private selectionManager: ISelectionManager;
+    private tooltipService: ITooltipService;
+
     constructor(options: VisualConstructorOptions) {
         this.rootElement = options.element;
+
+        this.host = options.host;
+        this.selectionManager = this.host.createSelectionManager();
+        this.tooltipService = this.host.tooltipService;
 
         this.settingsService = new VisualSettingsService();
         this.settings = new VisualSettings();
@@ -112,6 +132,7 @@ export class Visual implements IVisual {
         this.detailElement = detail;
         this.dismissElement = dismiss;
 
+        // Toggle details (keeps existing behaviour)
         this.toggleElement.onclick = (e) => {
             e.stopPropagation();
             if (!this.detailElement.textContent) {
@@ -121,10 +142,75 @@ export class Visual implements IVisual {
             this.updateDetailExpandedState();
         };
 
+        // Dismiss / advance message (keeps existing behaviour)
         this.dismissElement.onclick = (e) => {
             e.stopPropagation();
             this.showNextMessage();
         };
+
+        // NEW: outbound filtering (click on bar = select)
+        this.alertRootElement.addEventListener("click", async (e) => {
+            // Don't hijack clicks on toggle/dismiss (they already stopPropagation)
+            const msg = this.messages?.[this.currentMessageIndex];
+            if (msg?.selectionId) {
+                await this.selectionManager.select(msg.selectionId, false);
+            } else {
+                await this.selectionManager.clear();
+            }
+            e.stopPropagation();
+        });
+
+        // NEW: right-click context menu
+        this.alertRootElement.addEventListener("contextmenu", (e: MouseEvent) => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const msg = this.messages?.[this.currentMessageIndex];
+            const id =
+                msg?.selectionId ??
+                this.host.createSelectionIdBuilder().createSelectionId(); // visual-level context
+
+            this.selectionManager.showContextMenu(id, { x: e.clientX, y: e.clientY });
+        });
+
+        // NEW: tooltips (hover)
+        const showTooltip = (e: MouseEvent) => {
+            if (!this.tooltipService?.enabled()) return;
+
+            const msg = this.messages?.[this.currentMessageIndex];
+            const items = msg?.tooltipItems;
+            if (!items || items.length === 0) return;
+
+            this.tooltipService.show({
+                coordinates: [e.clientX, e.clientY],
+                isTouchEvent: false,
+                dataItems: items,
+                identities: msg?.selectionId ? [msg.selectionId] : []
+            });
+        };
+
+        const moveTooltip = (e: MouseEvent) => {
+            if (!this.tooltipService?.enabled()) return;
+
+            const msg = this.messages?.[this.currentMessageIndex];
+            const identities = msg?.selectionId ? [msg.selectionId] : [];
+
+            this.tooltipService.move({
+                coordinates: [e.clientX, e.clientY],
+                isTouchEvent: false,
+                identities
+            });
+        };
+
+
+        const hideTooltip = () => {
+            if (!this.tooltipService?.enabled()) return;
+            this.tooltipService.hide({ immediately: true, isTouchEvent: false });
+        };
+
+        this.alertRootElement.addEventListener("mouseover", showTooltip);
+        this.alertRootElement.addEventListener("mousemove", moveTooltip);
+        this.alertRootElement.addEventListener("mouseout", hideTooltip);
 
         this.applySeverity(0);
         this.applyTextSettings();
@@ -142,19 +228,30 @@ export class Visual implements IVisual {
     }
 
     private applyTextSettings(): void {
-        this.alertRootElement.style.fontFamily = "Segoe UI";
-        this.messageContainerElement.style.fontSize = "13px";
-        this.detailElement.style.fontSize = "12px";
-        this.toggleElement.style.fontSize = "12px";
-        this.messageTextElement.style.fontWeight = "600";
+        // Pull from formatting settings where present, otherwise fall back to your existing defaults
+        const text = (this.settings as any)?.text;
+
+        const fontFamily = (text?.fontFamily?.value as string) || "Segoe UI";
+        const msgSize = Number(text?.messageFontSize?.value);
+        const detailSize = Number(text?.detailFontSize?.value);
+        const toggleSize = Number(text?.toggleFontSize?.value);
+        const bold = Boolean(text?.messageBold?.value);
+
+        this.alertRootElement.style.fontFamily = fontFamily;
+
+        this.messageContainerElement.style.fontSize = isNaN(msgSize) ? "13px" : `${msgSize}px`;
+        this.detailElement.style.fontSize = isNaN(detailSize) ? "12px" : `${detailSize}px`;
+        this.toggleElement.style.fontSize = isNaN(toggleSize) ? "12px" : `${toggleSize}px`;
+
+        this.messageTextElement.style.fontWeight = bold ? "600" : "400";
     }
 
     private applySeverity(sev: number): void {
         const styles = [
-            { fill: "#F5F5F5", border: "#D1D1D1", icon: InfoIcon },    // 0 Info
+            { fill: "#F5F5F5", border: "#D1D1D1", icon: InfoIcon }, // 0 Info
             { fill: "#F1FAF1", border: "#A2D8A2", icon: SuccessIcon }, // 1 Success
             { fill: "#FFF9F5", border: "#FBCEB6", icon: WarningIcon }, // 2 Caution
-            { fill: "#FDF3F4", border: "#ECABB3", icon: ErrorIcon }    // 3 Critical
+            { fill: "#FDF3F4", border: "#ECABB3", icon: ErrorIcon } // 3 Critical
         ];
 
         const idx = Math.max(0, Math.min(3, sev));
@@ -184,15 +281,8 @@ export class Visual implements IVisual {
             compareTarget = rule.fixedValue.value;
         }
 
-        const hasTrigger =
-            triggerValue !== null &&
-            triggerValue !== undefined &&
-            triggerValue !== "";
-
-        const hasCompare =
-            compareTarget !== null &&
-            compareTarget !== undefined &&
-            compareTarget !== "";
+        const hasTrigger = triggerValue !== null && triggerValue !== undefined && triggerValue !== "";
+        const hasCompare = compareTarget !== null && compareTarget !== undefined && compareTarget !== "";
 
         if (!hasTrigger || !hasCompare) {
             return null;
@@ -206,19 +296,35 @@ export class Visual implements IVisual {
 
         if (bothNumeric) {
             switch (op) {
-                case "eq":  result = valNum === cmpNum; break;
-                case "neq": result = valNum !== cmpNum; break;
-                case "gt":  result = valNum >  cmpNum;  break;
-                case "lt":  result = valNum <  cmpNum;  break;
+                case "eq":
+                    result = valNum === cmpNum;
+                    break;
+                case "neq":
+                    result = valNum !== cmpNum;
+                    break;
+                case "gt":
+                    result = valNum > cmpNum;
+                    break;
+                case "lt":
+                    result = valNum < cmpNum;
+                    break;
             }
         } else {
             const vs = String(triggerValue ?? "");
             const cs = String(compareTarget ?? "");
             switch (op) {
-                case "eq":  result = vs === cs; break;
-                case "neq": result = vs !== cs; break;
-                case "gt":  result = vs >  cs;  break;
-                case "lt":  result = vs <  cs;  break;
+                case "eq":
+                    result = vs === cs;
+                    break;
+                case "neq":
+                    result = vs !== cs;
+                    break;
+                case "gt":
+                    result = vs > cs;
+                    break;
+                case "lt":
+                    result = vs < cs;
+                    break;
             }
         }
 
@@ -319,6 +425,10 @@ export class Visual implements IVisual {
         this.expanded = false;
         this.updateDetailExpandedState();
 
+        // Clear any previous selection on data refresh (optional but usually helps)
+        // (Does not break anything if certification clicks around)
+        this.selectionManager.clear().catch(() => void 0);
+
         const table = dataView?.table;
         if (!table || !table.columns || !table.rows || table.rows.length === 0) {
             this.clearVisual();
@@ -335,8 +445,8 @@ export class Visual implements IVisual {
             return -1;
         };
 
-        const idxScenario  = getIndexByRole("scenario");
-        const idxValue     = getIndexByRole("value");
+        const idxScenario = getIndexByRole("scenario");
+        const idxValue = getIndexByRole("value");
         const idxCompareTo = getIndexByRole("compareTo");
 
         const rules: RuleCard[] = [
@@ -350,13 +460,13 @@ export class Visual implements IVisual {
             this.settings.rule8
         ];
 
-        const findRowByScenario = (scenarioName: string): any[] | null => {
+        const findRowByScenario = (scenarioName: string): { row: any[]; rowIndex: number } | null => {
             if (!scenarioName || idxScenario < 0) return null;
             const key = scenarioName.trim().toLowerCase();
-            for (const r of rows) {
-                const sVal = r[idxScenario];
+            for (let r = 0; r < rows.length; r++) {
+                const sVal = rows[r][idxScenario];
                 if (sVal != null && String(sVal).trim().toLowerCase() === key) {
-                    return r;
+                    return { row: rows[r], rowIndex: r };
                 }
             }
             return null;
@@ -368,10 +478,13 @@ export class Visual implements IVisual {
             const scenarioName = (rule.scenario.value || "").toString().trim();
             if (!scenarioName || idxScenario < 0) continue;
 
-            const evalRow = findRowByScenario(scenarioName);
-            if (!evalRow) continue;
+            const found = findRowByScenario(scenarioName);
+            if (!found) continue;
 
-            const triggerValue   = idxValue     >= 0 ? evalRow[idxValue]     : null;
+            const evalRow = found.row;
+            const rowIndex = found.rowIndex;
+
+            const triggerValue = idxValue >= 0 ? evalRow[idxValue] : null;
             const compareToValue = idxCompareTo >= 0 ? evalRow[idxCompareTo] : null;
 
             const cond = this.evaluateCondition(rule, triggerValue, compareToValue);
@@ -383,33 +496,50 @@ export class Visual implements IVisual {
                 ? (rule.trueState.value as string)
                 : (rule.falseState.value as string);
 
-            const severity = this.getSeverityForState(
-                stateValue,
-                isTrue ? 1 : 0
-            );
-            if (severity === null) {
-                continue;
-            }
+            const severity = this.getSeverityForState(stateValue, isTrue ? 1 : 0);
+            if (severity === null) continue;
 
-            const rawMsg = isTrue
-                ? (rule.messageTrue.value || "")
-                : (rule.messageFalse.value || "");
-
-            const rawDetail = isTrue
-                ? (rule.detailTrue.value || "")
-                : (rule.detailFalse.value || "");
+            const rawMsg = isTrue ? (rule.messageTrue.value || "") : (rule.messageFalse.value || "");
+            const rawDetail = isTrue ? (rule.detailTrue.value || "") : (rule.detailFalse.value || "");
 
             const msgText = rawMsg.toString().trim();
             const detailText = rawDetail.toString().trim();
 
-            if (!msgText) {
-                continue;
+            if (!msgText) continue;
+
+            // NEW: selection identity for the scenario row (enables filter-out + context menu + tooltip identities)
+            let selectionId: powerbi.visuals.ISelectionId | undefined;
+            try {
+                // This works when table.identity exists (most table mappings provide it)
+                if ((table as any).identity && (table as any).identity[rowIndex]) {
+                    selectionId = this.host
+                        .createSelectionIdBuilder()
+                        .withTable(table as any, rowIndex)
+                        .createSelectionId();
+                }
+            } catch {
+                selectionId = undefined;
+            }
+
+            // NEW: tooltip payload
+            const tooltipItems: VisualTooltipDataItem[] = [
+                { displayName: "Scenario", value: scenarioName },
+                { displayName: "Value", value: triggerValue == null ? "" : String(triggerValue) },
+                { displayName: "Compare to", value: compareToValue == null ? "" : String(compareToValue) },
+                { displayName: "Rule result", value: isTrue ? "TRUE" : "FALSE" },
+                { displayName: "Message", value: msgText }
+            ];
+
+            if (detailText) {
+                tooltipItems.push({ displayName: "Detail", value: detailText });
             }
 
             this.messages.push({
                 message: msgText,
                 detail: detailText,
-                severity: severity
+                severity: severity,
+                selectionId,
+                tooltipItems
             });
         }
 
