@@ -36,4 +36,5 @@ Thumbs.db
 # vs settings folder
 .vscode/
 webpack.statistics.dev.html
+webpack.statistics.prod.html
 

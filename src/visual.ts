@@ -26,11 +26,7 @@ interface QueuedMessage {
     message: string;
     detail: string;
     severity: number; // 0..3
-
-    // NEW: identity for cross-filter/context menu + tooltip anchoring
     selectionId?: powerbi.visuals.ISelectionId;
-
-    // NEW: tooltip content (host renders)
     tooltipItems?: VisualTooltipDataItem[];
 }
 
@@ -49,6 +45,8 @@ export class Visual implements IVisual {
     private detailElement: HTMLElement;
     private dismissElement: HTMLImageElement;
 
+    private emptyElement: HTMLElement;
+
     private expanded: boolean = false;
 
     private messages: QueuedMessage[] = [];
@@ -57,7 +55,6 @@ export class Visual implements IVisual {
     private settingsService: VisualSettingsService;
     private settings: VisualSettings;
 
-    // NEW: host services needed for certification core functionality
     private host: IVisualHost;
     private selectionManager: ISelectionManager;
     private tooltipService: ITooltipService;
@@ -90,7 +87,7 @@ export class Visual implements IVisual {
 
         const messageText = document.createElement("span");
         messageText.className = "alert-message-text";
-        messageText.textContent = "Message (configure rules)";
+        messageText.textContent = "";
 
         const toggle = document.createElement("span");
         toggle.className = "alert-toggle";
@@ -117,8 +114,29 @@ export class Visual implements IVisual {
         detail.className = "alert-detail";
         detail.textContent = "";
 
+        // Empty state content (safe DOM creation; no innerHTML)
+        const empty = document.createElement("div");
+        empty.className = "alert-empty";
+
+        const emptyBody = document.createElement("div");
+        emptyBody.className = "alert-empty-body";
+
+        emptyBody.appendChild(document.createTextNode("Set up rules in the "));
+        const b1 = document.createElement("b");
+        b1.textContent = "Format your visual";
+        emptyBody.appendChild(b1);
+        emptyBody.appendChild(document.createTextNode(" settings. For full guidance, refer to the "));
+        const b2 = document.createElement("b");
+        b2.textContent = "Hints and Tips";
+        emptyBody.appendChild(b2);
+        emptyBody.appendChild(document.createTextNode(" page in the supporting PBIX file."));
+
+        empty.appendChild(emptyBody);
+
         alertRoot.appendChild(header);
         alertRoot.appendChild(detail);
+        alertRoot.appendChild(empty);
+
         container.appendChild(alertRoot);
         this.rootElement.appendChild(container);
 
@@ -131,8 +149,8 @@ export class Visual implements IVisual {
         this.remainingElement = remaining;
         this.detailElement = detail;
         this.dismissElement = dismiss;
+        this.emptyElement = empty;
 
-        // Toggle details (keeps existing behaviour)
         this.toggleElement.onclick = (e) => {
             e.stopPropagation();
             if (!this.detailElement.textContent) {
@@ -140,17 +158,15 @@ export class Visual implements IVisual {
             }
             this.expanded = !this.expanded;
             this.updateDetailExpandedState();
-        };
+                };
 
-        // Dismiss / advance message (keeps existing behaviour)
         this.dismissElement.onclick = (e) => {
             e.stopPropagation();
             this.showNextMessage();
         };
 
-        // NEW: outbound filtering (click on bar = select)
+        // Outbound filtering (click on bar = select)
         this.alertRootElement.addEventListener("click", async (e) => {
-            // Don't hijack clicks on toggle/dismiss (they already stopPropagation)
             const msg = this.messages?.[this.currentMessageIndex];
             if (msg?.selectionId) {
                 await this.selectionManager.select(msg.selectionId, false);
@@ -160,7 +176,7 @@ export class Visual implements IVisual {
             e.stopPropagation();
         });
 
-        // NEW: right-click context menu
+        // Right-click context menu
         this.alertRootElement.addEventListener("contextmenu", (e: MouseEvent) => {
             e.preventDefault();
             e.stopPropagation();
@@ -168,12 +184,12 @@ export class Visual implements IVisual {
             const msg = this.messages?.[this.currentMessageIndex];
             const id =
                 msg?.selectionId ??
-                this.host.createSelectionIdBuilder().createSelectionId(); // visual-level context
+                this.host.createSelectionIdBuilder().createSelectionId();
 
             this.selectionManager.showContextMenu(id, { x: e.clientX, y: e.clientY });
         });
 
-        // NEW: tooltips (hover)
+        // Tooltips (hover)
         const showTooltip = (e: MouseEvent) => {
             if (!this.tooltipService?.enabled()) return;
 
@@ -202,7 +218,6 @@ export class Visual implements IVisual {
             });
         };
 
-
         const hideTooltip = () => {
             if (!this.tooltipService?.enabled()) return;
             this.tooltipService.hide({ immediately: true, isTouchEvent: false });
@@ -214,7 +229,9 @@ export class Visual implements IVisual {
 
         this.applySeverity(0);
         this.applyTextSettings();
-        this.clearVisual();
+
+        // Show holding message on first load
+        this.clearVisual(true);
     }
 
     private updateDetailExpandedState(): void {
@@ -228,7 +245,6 @@ export class Visual implements IVisual {
     }
 
     private applyTextSettings(): void {
-        // Pull from formatting settings where present, otherwise fall back to your existing defaults
         const text = (this.settings as any)?.text;
 
         const fontFamily = (text?.fontFamily?.value as string) || "Segoe UI";
@@ -243,7 +259,7 @@ export class Visual implements IVisual {
         this.detailElement.style.fontSize = isNaN(detailSize) ? "12px" : `${detailSize}px`;
         this.toggleElement.style.fontSize = isNaN(toggleSize) ? "12px" : `${toggleSize}px`;
 
-        this.messageTextElement.style.fontWeight = bold ? "600" : "400";
+        this.messageTextElement.style.fontWeight = "600";
     }
 
     private applySeverity(sev: number): void {
@@ -296,35 +312,19 @@ export class Visual implements IVisual {
 
         if (bothNumeric) {
             switch (op) {
-                case "eq":
-                    result = valNum === cmpNum;
-                    break;
-                case "neq":
-                    result = valNum !== cmpNum;
-                    break;
-                case "gt":
-                    result = valNum > cmpNum;
-                    break;
-                case "lt":
-                    result = valNum < cmpNum;
-                    break;
+                case "eq": result = valNum === cmpNum; break;
+                case "neq": result = valNum !== cmpNum; break;
+                case "gt": result = valNum > cmpNum; break;
+                case "lt": result = valNum < cmpNum; break;
             }
         } else {
             const vs = String(triggerValue ?? "");
             const cs = String(compareTarget ?? "");
             switch (op) {
-                case "eq":
-                    result = vs === cs;
-                    break;
-                case "neq":
-                    result = vs !== cs;
-                    break;
-                case "gt":
-                    result = vs > cs;
-                    break;
-                case "lt":
-                    result = vs < cs;
-                    break;
+                case "eq": result = vs === cs; break;
+                case "neq": result = vs !== cs; break;
+                case "gt": result = vs > cs; break;
+                case "lt": result = vs < cs; break;
             }
         }
 
@@ -342,17 +342,83 @@ export class Visual implements IVisual {
         return fallback;
     }
 
-    private clearVisual(): void {
+    // NEW: determine whether a rule is "completed" (configured enough to hide the holding message)
+    private isRuleComplete(rule: RuleCard): boolean {
+        if (!rule || rule.enabled.value !== true) return false;
+
+        // Required for any enabled rule
+        if (!rule.scenario.value || !rule.operator.value || !rule.compareSource.value) return false;
+
+        // TRUE path must be configured (severity + message)
+        const trueSeverity = rule.trueState.value as string;
+        const trueMessage = (rule.messageTrue.value || "").toString().trim();
+
+        if (trueSeverity === "none") return false;
+        if (!trueMessage) return false;
+
+        // FALSE path: only required if severity != none
+        const falseSeverity = rule.falseState.value as string;
+        const falseMessage = (rule.messageFalse.value || "").toString().trim();
+
+        if (falseSeverity !== "none" && !falseMessage) return false;
+
+        return true;
+    }
+
+    // NEW: holding message only disappears once at least one rule is complete
+    private anyCompletedRules(): boolean {
+        const rules: RuleCard[] = [
+            this.settings.rule1,
+            this.settings.rule2,
+            this.settings.rule3,
+            this.settings.rule4,
+            this.settings.rule5,
+            this.settings.rule6,
+            this.settings.rule7,
+            this.settings.rule8
+        ];
+        return rules.some((r) => this.isRuleComplete(r));
+    }
+
+    private clearVisual(showSetupHint: boolean): void {
+        if (showSetupHint) {
+            this.alertRootElement.style.visibility = "visible";
+            this.applySeverity(0);
+
+            this.messageTextElement.textContent = "Message Bars";
+            this.detailElement.textContent = "";
+            this.toggleElement.textContent = "";
+            this.toggleElement.style.display = "none";
+
+            this.remainingElement.textContent = "";
+            this.remainingElement.style.display = "none";
+
+            this.iconElement.src = InfoIcon;
+
+            if (this.emptyElement) this.emptyElement.style.display = "block";
+
+            this.expanded = false;
+            this.updateDetailExpandedState();
+            return;
+        }
+
         this.messageTextElement.textContent = "";
         this.detailElement.textContent = "";
         this.toggleElement.textContent = "";
+        this.toggleElement.style.display = "none";
+
         this.remainingElement.textContent = "";
         this.remainingElement.style.display = "none";
+
         this.iconElement.src = "";
+
+        if (this.emptyElement) this.emptyElement.style.display = "none";
+
         this.alertRootElement.style.backgroundColor = "transparent";
         this.alertRootElement.style.border = "none";
         this.alertRootElement.style.color = "transparent";
         this.alertRootElement.style.visibility = "hidden";
+
         this.expanded = false;
         this.updateDetailExpandedState();
     }
@@ -370,9 +436,12 @@ export class Visual implements IVisual {
 
     private showCurrentMessage(): void {
         if (!this.messages || this.messages.length === 0) {
-            this.clearVisual();
+            // Holding message stays until at least one rule is COMPLETE.
+            this.clearVisual(!this.anyCompletedRules());
             return;
         }
+
+        if (this.emptyElement) this.emptyElement.style.display = "none";
 
         const msg = this.messages[this.currentMessageIndex];
 
@@ -393,7 +462,7 @@ export class Visual implements IVisual {
 
     private showNextMessage(): void {
         if (!this.messages || this.messages.length === 0) {
-            this.clearVisual();
+            this.clearVisual(!this.anyCompletedRules());
             return;
         }
 
@@ -401,7 +470,8 @@ export class Visual implements IVisual {
 
         if (this.messages.length === 0) {
             this.currentMessageIndex = 0;
-            this.clearVisual();
+            // IMPORTANT: do not revert to holding message when dismissed
+            this.clearVisual(false);
             return;
         }
 
@@ -425,13 +495,13 @@ export class Visual implements IVisual {
         this.expanded = false;
         this.updateDetailExpandedState();
 
-        // Clear any previous selection on data refresh (optional but usually helps)
-        // (Does not break anything if certification clicks around)
         this.selectionManager.clear().catch(() => void 0);
 
         const table = dataView?.table;
+
+        // If no fields/data are bound, show holding message
         if (!table || !table.columns || !table.rows || table.rows.length === 0) {
-            this.clearVisual();
+            this.clearVisual(true);
             return;
         }
 
@@ -507,10 +577,8 @@ export class Visual implements IVisual {
 
             if (!msgText) continue;
 
-            // NEW: selection identity for the scenario row (enables filter-out + context menu + tooltip identities)
             let selectionId: powerbi.visuals.ISelectionId | undefined;
             try {
-                // This works when table.identity exists (most table mappings provide it)
                 if ((table as any).identity && (table as any).identity[rowIndex]) {
                     selectionId = this.host
                         .createSelectionIdBuilder()
@@ -521,11 +589,19 @@ export class Visual implements IVisual {
                 selectionId = undefined;
             }
 
-            // NEW: tooltip payload
             const tooltipItems: VisualTooltipDataItem[] = [
                 { displayName: "Scenario", value: scenarioName },
                 { displayName: "Value", value: triggerValue == null ? "" : String(triggerValue) },
-                { displayName: "Compare to", value: compareToValue == null ? "" : String(compareToValue) },
+                {
+                    displayName: "Compare to",
+                    value:
+                        (() => {
+                            const cs = String(rule.compareSource.value ?? "").toLowerCase();
+                            const isFixed = cs === "fixed";
+                            const target = isFixed ? rule.fixedValue.value : compareToValue;
+                            return target == null ? "" : String(target);
+                        })()
+                },
                 { displayName: "Rule result", value: isTrue ? "TRUE" : "FALSE" },
                 { displayName: "Message", value: msgText }
             ];
@@ -537,14 +613,15 @@ export class Visual implements IVisual {
             this.messages.push({
                 message: msgText,
                 detail: detailText,
-                severity: severity,
+                severity,
                 selectionId,
                 tooltipItems
             });
         }
 
         if (this.messages.length === 0) {
-            this.clearVisual();
+            // Holding message stays until at least one rule is COMPLETE.
+            this.clearVisual(!this.anyCompletedRules());
             return;
         }
 
