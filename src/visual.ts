@@ -151,6 +151,7 @@ export class Visual implements IVisual {
         this.dismissElement = dismiss;
         this.emptyElement = empty;
 
+        // Toggle details
         this.toggleElement.onclick = (e) => {
             e.stopPropagation();
             if (!this.detailElement.textContent) {
@@ -158,26 +159,44 @@ export class Visual implements IVisual {
             }
             this.expanded = !this.expanded;
             this.updateDetailExpandedState();
-                };
+        };
 
+        // Dismiss message
         this.dismissElement.onclick = (e) => {
             e.stopPropagation();
             this.showNextMessage();
         };
 
         // Outbound filtering (click on bar = select)
+        // If no row selectionId, still select a visual-level selectionId (so Filter Out works)
         this.alertRootElement.addEventListener("click", async (e) => {
             const msg = this.messages?.[this.currentMessageIndex];
+
             if (msg?.selectionId) {
                 await this.selectionManager.select(msg.selectionId, false);
             } else {
-                await this.selectionManager.clear();
+                const id = this.host.createSelectionIdBuilder().createSelectionId();
+                await this.selectionManager.select(id, false);
             }
+
             e.stopPropagation();
         });
 
-        // Right-click context menu
+        // Right-click context menu (on BAR)
         this.alertRootElement.addEventListener("contextmenu", (e: MouseEvent) => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const msg = this.messages?.[this.currentMessageIndex];
+            const id =
+                msg?.selectionId ??
+                this.host.createSelectionIdBuilder().createSelectionId();
+
+            this.selectionManager.showContextMenu(id, { x: e.clientX, y: e.clientY });
+        });
+
+        // Right-click context menu (on EMPTY SPACE inside visual container)
+        container.addEventListener("contextmenu", (e: MouseEvent) => {
             e.preventDefault();
             e.stopPropagation();
 
@@ -259,7 +278,9 @@ export class Visual implements IVisual {
         this.detailElement.style.fontSize = isNaN(detailSize) ? "12px" : `${detailSize}px`;
         this.toggleElement.style.fontSize = isNaN(toggleSize) ? "12px" : `${toggleSize}px`;
 
+        // Segoe UI Semibold
         this.messageTextElement.style.fontWeight = "600";
+        void bold; // keep variable to avoid unused warnings if lint is strict elsewhere
     }
 
     private applySeverity(sev: number): void {
@@ -312,37 +333,67 @@ export class Visual implements IVisual {
 
         if (bothNumeric) {
             switch (op) {
-                case "eq": result = valNum === cmpNum; break;
-                case "neq": result = valNum !== cmpNum; break;
-                case "gt": result = valNum > cmpNum; break;
-                case "lt": result = valNum < cmpNum; break;
+                case "eq":
+                    result = valNum === cmpNum;
+                    break;
+                case "neq":
+                    result = valNum !== cmpNum;
+                    break;
+                case "gt":
+                    result = valNum > cmpNum;
+                    break;
+                case "lt":
+                    result = valNum < cmpNum;
+                    break;
             }
         } else {
             const vs = String(triggerValue ?? "");
             const cs = String(compareTarget ?? "");
             switch (op) {
-                case "eq": result = vs === cs; break;
-                case "neq": result = vs !== cs; break;
-                case "gt": result = vs > cs; break;
-                case "lt": result = vs < cs; break;
+                case "eq":
+                    result = vs === cs;
+                    break;
+                case "neq":
+                    result = vs !== cs;
+                    break;
+                case "gt":
+                    result = vs > cs;
+                    break;
+                case "lt":
+                    result = vs < cs;
+                    break;
             }
         }
 
         return result;
     }
 
+    // NEW: normalise "No message" variants coming through from formatting model
+    private isNoMessageState(stateValue: any): boolean {
+        const s = String(stateValue ?? "").trim().toLowerCase();
+        return (
+            s === "none" ||
+            s === "no message" ||
+            s === "nomessage" ||
+            s === "no_message" ||
+            s === "no-message"
+        );
+    }
+
     private getSeverityForState(stateValue: string, fallback: number): number | null {
-        if (stateValue === "none") {
+        if (this.isNoMessageState(stateValue)) {
             return null;
         }
+
         const n = Number(stateValue);
         if ([0, 1, 2, 3].includes(n)) {
             return n;
         }
+
         return fallback;
     }
 
-    // NEW: determine whether a rule is "completed" (configured enough to hide the holding message)
+    // determine whether a rule is "completed" (configured enough to hide the holding message)
     private isRuleComplete(rule: RuleCard): boolean {
         if (!rule || rule.enabled.value !== true) return false;
 
@@ -353,19 +404,19 @@ export class Visual implements IVisual {
         const trueSeverity = rule.trueState.value as string;
         const trueMessage = (rule.messageTrue.value || "").toString().trim();
 
-        if (trueSeverity === "none") return false;
+        if (this.isNoMessageState(trueSeverity)) return false;
         if (!trueMessage) return false;
 
-        // FALSE path: only required if severity != none
+        // FALSE path: only required if severity is NOT "No message"
         const falseSeverity = rule.falseState.value as string;
         const falseMessage = (rule.messageFalse.value || "").toString().trim();
 
-        if (falseSeverity !== "none" && !falseMessage) return false;
+        if (!this.isNoMessageState(falseSeverity) && !falseMessage) return false;
 
         return true;
     }
 
-    // NEW: holding message only disappears once at least one rule is complete
+    // holding message only disappears once at least one rule is complete
     private anyCompletedRules(): boolean {
         const rules: RuleCard[] = [
             this.settings.rule1,
@@ -495,8 +546,6 @@ export class Visual implements IVisual {
         this.expanded = false;
         this.updateDetailExpandedState();
 
-        this.selectionManager.clear().catch(() => void 0);
-
         const table = dataView?.table;
 
         // If no fields/data are bound, show holding message
@@ -579,28 +628,27 @@ export class Visual implements IVisual {
 
             let selectionId: powerbi.visuals.ISelectionId | undefined;
             try {
-                if ((table as any).identity && (table as any).identity[rowIndex]) {
-                    selectionId = this.host
-                        .createSelectionIdBuilder()
-                        .withTable(table as any, rowIndex)
-                        .createSelectionId();
-                }
+                // Table row selection (Selection API)
+                selectionId = this.host
+                    .createSelectionIdBuilder()
+                    .withTable(table as any, rowIndex)
+                    .createSelectionId();
             } catch {
                 selectionId = undefined;
             }
+
 
             const tooltipItems: VisualTooltipDataItem[] = [
                 { displayName: "Scenario", value: scenarioName },
                 { displayName: "Value", value: triggerValue == null ? "" : String(triggerValue) },
                 {
                     displayName: "Compare to",
-                    value:
-                        (() => {
-                            const cs = String(rule.compareSource.value ?? "").toLowerCase();
-                            const isFixed = cs === "fixed";
-                            const target = isFixed ? rule.fixedValue.value : compareToValue;
-                            return target == null ? "" : String(target);
-                        })()
+                    value: (() => {
+                        const cs = String(rule.compareSource.value ?? "").toLowerCase();
+                        const isFixed = cs === "fixed";
+                        const target = isFixed ? rule.fixedValue.value : compareToValue;
+                        return target == null ? "" : String(target);
+                    })()
                 },
                 { displayName: "Rule result", value: isTrue ? "TRUE" : "FALSE" },
                 { displayName: "Message", value: msgText }
