@@ -3,7 +3,6 @@
 import "../style/visual.less";
 
 import powerbi from "powerbi-visuals-api";
-import IVisualEventService = powerbi.extensibility.IVisualEventService;
 import IVisual = powerbi.extensibility.visual.IVisual;
 import IVisualHost = powerbi.extensibility.visual.IVisualHost;
 import ISelectionManager = powerbi.extensibility.ISelectionManager;
@@ -32,7 +31,6 @@ interface QueuedMessage {
 }
 
 export class Visual implements IVisual {
-    private events: IVisualEventService;
     private rootElement: HTMLElement;
 
     private alertRootElement: HTMLElement;
@@ -62,7 +60,6 @@ export class Visual implements IVisual {
     private tooltipService: ITooltipService;
 
     constructor(options: VisualConstructorOptions) {
-        this.events = options.host.eventService;
         this.rootElement = options.element;
 
         this.host = options.host;
@@ -371,7 +368,7 @@ export class Visual implements IVisual {
         return result;
     }
 
-    // normalise "No message" variants coming through from formatting model
+    // NEW: normalise "No message" variants coming through from formatting model
     private isNoMessageState(stateValue: any): boolean {
         const s = String(stateValue ?? "").trim().toLowerCase();
         return (
@@ -537,155 +534,146 @@ export class Visual implements IVisual {
     }
 
     public update(options: VisualUpdateOptions): void {
-        this.events.renderingStarted(options);
+        const dataView: DataView | undefined = options.dataViews && options.dataViews[0];
 
-        try {
-            const dataView: DataView | undefined = options.dataViews && options.dataViews[0];
+        if (dataView) {
+            this.settings = this.settingsService.populate(dataView);
+        }
 
-            if (dataView) {
-                this.settings = this.settingsService.populate(dataView);
+        this.applyTextSettings();
+        this.messages = [];
+        this.currentMessageIndex = 0;
+        this.expanded = false;
+        this.updateDetailExpandedState();
+
+        const table = dataView?.table;
+
+        // If no fields/data are bound, show holding message
+        if (!table || !table.columns || !table.rows || table.rows.length === 0) {
+            this.clearVisual(true);
+            return;
+        }
+
+        const rows = table.rows;
+
+        const getIndexByRole = (roleName: string): number => {
+            for (let i = 0; i < table.columns.length; i++) {
+                const roles = (table.columns[i] as any).roles;
+                if (roles && roles[roleName]) return i;
             }
+            return -1;
+        };
 
-            this.applyTextSettings();
-            this.messages = [];
-            this.currentMessageIndex = 0;
-            this.expanded = false;
-            this.updateDetailExpandedState();
+        const idxScenario = getIndexByRole("scenario");
+        const idxValue = getIndexByRole("value");
+        const idxCompareTo = getIndexByRole("compareTo");
 
-            const table = dataView?.table;
+        const rules: RuleCard[] = [
+            this.settings.rule1,
+            this.settings.rule2,
+            this.settings.rule3,
+            this.settings.rule4,
+            this.settings.rule5,
+            this.settings.rule6,
+            this.settings.rule7,
+            this.settings.rule8
+        ];
 
-            // If no fields/data are bound, show holding message
-            if (!table || !table.columns || !table.rows || table.rows.length === 0) {
-                this.clearVisual(true);
-                this.events.renderingFinished(options);
-                return;
-            }
-
-            const rows = table.rows;
-
-            const getIndexByRole = (roleName: string): number => {
-                for (let i = 0; i < table.columns.length; i++) {
-                    const roles = (table.columns[i] as any).roles;
-                    if (roles && roles[roleName]) return i;
+        const findRowByScenario = (scenarioName: string): { row: any[]; rowIndex: number } | null => {
+            if (!scenarioName || idxScenario < 0) return null;
+            const key = scenarioName.trim().toLowerCase();
+            for (let r = 0; r < rows.length; r++) {
+                const sVal = rows[r][idxScenario];
+                if (sVal != null && String(sVal).trim().toLowerCase() === key) {
+                    return { row: rows[r], rowIndex: r };
                 }
-                return -1;
-            };
+            }
+            return null;
+        };
 
-            const idxScenario = getIndexByRole("scenario");
-            const idxValue = getIndexByRole("value");
-            const idxCompareTo = getIndexByRole("compareTo");
+        for (const rule of rules) {
+            if (!rule.enabled.value) continue;
 
-            const rules: RuleCard[] = [
-                this.settings.rule1,
-                this.settings.rule2,
-                this.settings.rule3,
-                this.settings.rule4,
-                this.settings.rule5,
-                this.settings.rule6,
-                this.settings.rule7,
-                this.settings.rule8
+            const scenarioName = (rule.scenario.value || "").toString().trim();
+            if (!scenarioName || idxScenario < 0) continue;
+
+            const found = findRowByScenario(scenarioName);
+            if (!found) continue;
+
+            const evalRow = found.row;
+            const rowIndex = found.rowIndex;
+
+            const triggerValue = idxValue >= 0 ? evalRow[idxValue] : null;
+            const compareToValue = idxCompareTo >= 0 ? evalRow[idxCompareTo] : null;
+
+            const cond = this.evaluateCondition(rule, triggerValue, compareToValue);
+            if (cond === null) continue;
+
+            const isTrue = cond === true;
+
+            const stateValue = isTrue
+                ? (rule.trueState.value as string)
+                : (rule.falseState.value as string);
+
+            const severity = this.getSeverityForState(stateValue, isTrue ? 1 : 0);
+            if (severity === null) continue;
+
+            const rawMsg = isTrue ? (rule.messageTrue.value || "") : (rule.messageFalse.value || "");
+            const rawDetail = isTrue ? (rule.detailTrue.value || "") : (rule.detailFalse.value || "");
+
+            const msgText = rawMsg.toString().trim();
+            const detailText = rawDetail.toString().trim();
+
+            if (!msgText) continue;
+
+            let selectionId: powerbi.visuals.ISelectionId | undefined;
+            try {
+                // Table row selection (Selection API)
+                selectionId = this.host
+                    .createSelectionIdBuilder()
+                    .withTable(table as any, rowIndex)
+                    .createSelectionId();
+            } catch {
+                selectionId = undefined;
+            }
+
+
+            const tooltipItems: VisualTooltipDataItem[] = [
+                { displayName: "Scenario", value: scenarioName },
+                { displayName: "Value", value: triggerValue == null ? "" : String(triggerValue) },
+                {
+                    displayName: "Compare to",
+                    value: (() => {
+                        const cs = String(rule.compareSource.value ?? "").toLowerCase();
+                        const isFixed = cs === "fixed";
+                        const target = isFixed ? rule.fixedValue.value : compareToValue;
+                        return target == null ? "" : String(target);
+                    })()
+                },
+                { displayName: "Rule result", value: isTrue ? "TRUE" : "FALSE" },
+                { displayName: "Message", value: msgText }
             ];
 
-            const findRowByScenario = (scenarioName: string): { row: any[]; rowIndex: number } | null => {
-                if (!scenarioName || idxScenario < 0) return null;
-                const key = scenarioName.trim().toLowerCase();
-                for (let r = 0; r < rows.length; r++) {
-                    const sVal = rows[r][idxScenario];
-                    if (sVal != null && String(sVal).trim().toLowerCase() === key) {
-                        return { row: rows[r], rowIndex: r };
-                    }
-                }
-                return null;
-            };
-
-            for (const rule of rules) {
-                if (!rule.enabled.value) continue;
-
-                const scenarioName = (rule.scenario.value || "").toString().trim();
-                if (!scenarioName || idxScenario < 0) continue;
-
-                const found = findRowByScenario(scenarioName);
-                if (!found) continue;
-
-                const evalRow = found.row;
-                const rowIndex = found.rowIndex;
-
-                const triggerValue = idxValue >= 0 ? evalRow[idxValue] : null;
-                const compareToValue = idxCompareTo >= 0 ? evalRow[idxCompareTo] : null;
-
-                const cond = this.evaluateCondition(rule, triggerValue, compareToValue);
-                if (cond === null) continue;
-
-                const isTrue = cond === true;
-
-                const stateValue = isTrue
-                    ? (rule.trueState.value as string)
-                    : (rule.falseState.value as string);
-
-                const severity = this.getSeverityForState(stateValue, isTrue ? 1 : 0);
-                if (severity === null) continue;
-
-                const rawMsg = isTrue ? (rule.messageTrue.value || "") : (rule.messageFalse.value || "");
-                const rawDetail = isTrue ? (rule.detailTrue.value || "") : (rule.detailFalse.value || "");
-
-                const msgText = rawMsg.toString().trim();
-                const detailText = rawDetail.toString().trim();
-
-                if (!msgText) continue;
-
-                let selectionId: powerbi.visuals.ISelectionId | undefined;
-                try {
-                    // Table row selection (Selection API)
-                    selectionId = this.host
-                        .createSelectionIdBuilder()
-                        .withTable(table as any, rowIndex)
-                        .createSelectionId();
-                } catch {
-                    selectionId = undefined;
-                }
-
-                const tooltipItems: VisualTooltipDataItem[] = [
-                    { displayName: "Scenario", value: scenarioName },
-                    { displayName: "Value", value: triggerValue == null ? "" : String(triggerValue) },
-                    {
-                        displayName: "Compare to",
-                        value: (() => {
-                            const cs = String(rule.compareSource.value ?? "").toLowerCase();
-                            const isFixed = cs === "fixed";
-                            const target = isFixed ? rule.fixedValue.value : compareToValue;
-                            return target == null ? "" : String(target);
-                        })()
-                    },
-                    { displayName: "Rule result", value: isTrue ? "TRUE" : "FALSE" },
-                    { displayName: "Message", value: msgText }
-                ];
-
-                if (detailText) {
-                    tooltipItems.push({ displayName: "Detail", value: detailText });
-                }
-
-                this.messages.push({
-                    message: msgText,
-                    detail: detailText,
-                    severity,
-                    selectionId,
-                    tooltipItems
-                });
+            if (detailText) {
+                tooltipItems.push({ displayName: "Detail", value: detailText });
             }
 
-            if (this.messages.length === 0) {
-                // Holding message stays until at least one rule is COMPLETE.
-                this.clearVisual(!this.anyCompletedRules());
-                this.events.renderingFinished(options);
-                return;
-            }
-
-            this.showCurrentMessage();
-            this.events.renderingFinished(options);
-        } catch (exception) {
-            const errorMessage = exception instanceof Error ? exception.message : "Unknown error occurred";
-            this.events.renderingFailed(options, errorMessage);
+            this.messages.push({
+                message: msgText,
+                detail: detailText,
+                severity,
+                selectionId,
+                tooltipItems
+            });
         }
+
+        if (this.messages.length === 0) {
+            // Holding message stays until at least one rule is COMPLETE.
+            this.clearVisual(!this.anyCompletedRules());
+            return;
+        }
+
+        this.showCurrentMessage();
     }
 
     public getFormattingModel(): FormattingModel {
